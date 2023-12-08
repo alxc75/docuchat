@@ -4,7 +4,6 @@ import tiktoken
 from openai import OpenAI, OpenAIError
 from pages.settings import api_key
 import math
-import time
 
 st.set_page_config(page_title="DocuChat", page_icon=":speech_balloon:", layout="wide")
 
@@ -62,13 +61,17 @@ if uploaded_file is not None: # Prevent error message when no file is uploaded
     output = encoding.encode(text)
     tokens = len(encoding.encode(text))
 
-    # Choose the right model based on the number of tokens. 3.5 only.
+    # Choose the right model based on the number of tokens. GPT-3.5-Turbo only.
     gen_max_tokens = 500
-    if tokens < 4096 - gen_max_tokens:
+    if tokens == 0:
+        st.error("Couldn't parse your document. Please try again.")
+        model = None
+        st.stop()
+    elif tokens <= 4096 - gen_max_tokens:
         model = "gpt-3.5-turbo"
-    elif tokens < 16385 - gen_max_tokens:
+    elif tokens <= 16385 - gen_max_tokens:
         model = "gpt-3.5-turbo-16k"
-    else :
+    else:
         divider = math.ceil(tokens / 16385)
         st.error(f"Your document is too long! You need to choose a smaller document or divide yours in {divider} parts.")
         model = None
@@ -86,7 +89,7 @@ sys_prompt = ("You are an assistant designed to give summaries of uploaded docum
           "in the form of bullet points. Make sure to include every point discussed in the document. Being verbose is "
           "highly preferable compared to missing ideas in the document. Here is the document to recap:")
 
-@st.cache_data(show_spinner=True)
+@st.cache_data(show_spinner=True, persist=True)
 def generate_completion(text):
     if text == '':
         print("No document detected. No completion will be generated.")
@@ -104,6 +107,15 @@ def generate_completion(text):
         )
         st.markdown("## Summary")
         response_text = response.choices[0].message.content
+
+        # Add session state to keep the output text if the user switches tabs
+        if 'saved_text' in st.session_state:
+            del st.session_state.saved_text
+            st.session_state.saved_text = response_text
+        else:
+            st.session_state.saved_text = response_text
+        st.cache_data.clear()
+
         return response_text
 
 
@@ -112,11 +124,13 @@ def generate_completion(text):
         return None
 
 
-
 response_text = generate_completion(text)
-st.markdown(response_text)
 
-
+# Add session state to keep the output text
+if 'saved_text' not in st.session_state:
+    st.markdown(response_text)
+else:
+    st.markdown(st.session_state.saved_text)
 
 
 
