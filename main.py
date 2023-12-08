@@ -23,7 +23,7 @@ st.sidebar.markdown("""
 Use this tab to get a quick summary of your uploaded document.\n
 TODO: 
 - [x] Create working summarizer
-- [ ] Add caching to the whole page. Switching between tabs should not refresh the page.
+- [x] Add caching to the whole page. Switching between tabs should not refresh the page.
 - [x] Add a token warning
 - [x] Switch to the Chat API for larger models
 - [x] Add model auto-selection
@@ -126,11 +126,24 @@ def generate_completion(text):
 
 response_text = generate_completion(text)
 
+
+output_wrapper = st.empty() # Create a wrapper around the output to allow for clearing it
 # Add session state to keep the output text
 if 'saved_text' not in st.session_state:
-    st.markdown(response_text)
+    output_wrapper.markdown(response_text)
 else:
-    st.markdown(st.session_state.saved_text)
+    output_wrapper.markdown(st.session_state.saved_text)
+
+regen, clear = st.columns(2)
+if len(response_text) > 0:
+    if regen.button("Regenerate summary"):
+        st.cache_data.clear()
+
+    if clear.button("Clear summary"):
+        del st.session_state.saved_text
+        st.cache_data.clear()
+        output_wrapper.empty()
+        st.stop()
 
 
 
