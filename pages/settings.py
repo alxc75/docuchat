@@ -32,4 +32,4 @@ if new_api_key != api_key and new_api_key.strip() != "":
     userinfo["api_key"] = new_api_key
     with open("userinfo.json", "w") as f:
         json.dump(userinfo, f, indent=4)
-    st.experimental_rerun()  # Force a rerun to reload the updated userinfo.json
+    st.rerun()  # Force a rerun to reload the updated userinfo.json
