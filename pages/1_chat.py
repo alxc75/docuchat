@@ -38,13 +38,21 @@ modeToggle.toggle("Advanced Mode", value=False, key="simple_mode", disabled=True
 st.markdown("Get answers to your questions about your document.")
 st.header(' ') # Add some space
 
+doc_loaded = st.empty()
 if len(st.session_state["text"]) > 0:
-    st.info("Currently using previously uploaded document. You can also upload a new document below.")
+    doc_loaded.info("Using document loaded in memory. You can also upload a new document below.")
 
 
 # Upload file
-# uploaded_file = st.file_uploader("Upload a document", type=["pdf", "docx"], help="Accepts PDF and Word documents.")
-# text, tokens, model = parse_document(uploaded_file)
+uploaded_file = st.file_uploader("Upload a document", type=["pdf", "docx"], help="Accepts PDF and Word documents.")
+parsed_text, tokens, model = parse_document(uploaded_file)
+if uploaded_file is not None:
+    st.session_state["text"] = parsed_text
+    text = parsed_text
+    st.toast("Document uploaded successfully!", icon="📄")
+    doc_loaded.info("Loading complete!")
+else:
+    text = st.session_state["text"]
 
 # Request parameters
 gen_max_tokens = 500
