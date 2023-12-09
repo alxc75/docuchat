@@ -26,12 +26,7 @@ st.sidebar.title("Summary")
 st.sidebar.markdown("""
 Use this tab to get a quick summary of your uploaded document.\n
 TODO: 
-- [x] Create working summarizer
-- [x] Add caching to the whole page. Switching between tabs should not refresh the page.
-- [x] Add a token warning
-- [x] Switch to the Chat API for larger models
-- [x] Add model auto-selection
-- [x] Add parsed text caching. Need to wrap the text parsing in a function first, then store it in the session storage. Will be necessary for Chat Mode.
+- [ ] Check working cache between Chat and Summary
 """)
 
 # Top level greeting
@@ -79,10 +74,8 @@ def parse_document(uploaded_file):
         # Choose the right model based on the number of tokens. GPT-3.5-Turbo only.
         if tokens == 0:
             model = None
-        elif tokens <= 4096 - gen_max_tokens:
-            model = "gpt-3.5-turbo"
         elif tokens <= 16385 - gen_max_tokens:
-            model = "gpt-3.5-turbo-16k"
+            model = "gpt-3.5-turbo-1106"
         else:
             divider = math.ceil(tokens / 16385)
             st.error(f"Your document is too long! You need to choose a smaller document or divide yours in {divider} parts.")
@@ -130,7 +123,6 @@ def generate_completion(text):
 
         # Add session state to keep the output text if the user switches tabs
         if 'saved_text' in st.session_state:
-            del st.session_state.saved_text
             st.session_state.saved_text = response_text
         else:
             st.session_state.saved_text = response_text
@@ -153,15 +145,27 @@ if 'saved_text' not in st.session_state:
 else:
     output_wrapper.markdown(st.session_state.saved_text)
 
-regen, clear = st.columns(2)
-if len(response_text) > 0:
-    if regen.button("Regenerate summary"):
-        st.cache_data.clear()
 
-    if clear.button("Clear summary"):
-        del st.session_state.saved_text
-        del st.session_state.text
-        st.cache_data.clear()
-        output_wrapper.empty()
-        st.toast("Summary cleared!", icon="🔥")
+def regenerate_summary():
+    st.cache_data.clear()
+    output_wrapper.empty()
+
+
+def clear_summary():
+    st.session_state.saved_text = ''
+    # st.session_state.text = ''    # Not removing the parsed text for now since it is used by the Chat tab.
+    # st.cache_data.clear()         # No observable effect
+    output_wrapper.empty()
+    st.toast("Summary cleared!", icon="🔥")
+
+
+# regen, clear = st.columns(2)
+if len(response_text) > 0:
+    st.sidebar.button("Regenerate summary", on_click=regenerate_summary)
+    if st.sidebar.button("Clear summary", on_click=clear_summary):
         st.stop()
+
+
+for key in st.session_state:
+    st.write(key)
+    st.write(st.session_state[key])
