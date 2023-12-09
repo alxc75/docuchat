@@ -27,6 +27,7 @@ TODO:
 - [x] Add a token warning
 - [x] Switch to the Chat API for larger models
 - [x] Add model auto-selection
+- [ ] Add parsed text caching. Need to wrap the text parsing in a function first, then store it in the session storage. Will be necessary for Chat Mode.
 """)
 
 # Top level greeting
@@ -35,6 +36,8 @@ title.title("DocuChat")
 modeToggle.toggle("Advanced Mode", value=False, key="simple_mode", disabled=True, help="Coming soon!")
 st.markdown("""
 Welcome to DocuChat, your smart knowledge assistant.
+
+Upload a document and a summary will be generated below. Use the Chat tab to ask questions about the document.
 """)
 st.header(' ') # Add some space
 
@@ -42,7 +45,10 @@ st.header(' ') # Add some space
 uploaded_file = st.file_uploader("Upload a document", type=["pdf", "docx"], help="Accepts PDF and Word documents.")
 text = ''
 tokens = 0
-if uploaded_file is not None: # Prevent error message when no file is uploaded
+if uploaded_file is None: # Prevent error message when no file is uploaded
+    st.stop()
+else:
+    st.toast("File successfully uploaded!")
     name = uploaded_file.name
     # Check the extension and load the appropriate library
     if name.endswith(".pdf"):
