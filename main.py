@@ -7,6 +7,10 @@ import math
 
 st.set_page_config(page_title="DocuChat", page_icon=":speech_balloon:", layout="wide")
 
+# Initialize the session key for the text. See the end of parse_document() for writing.
+if "text" not in st.session_state:
+    st.session_state["text"] = ""
+
 # Create the navigation bar
 show_pages(
     [
@@ -27,7 +31,7 @@ TODO:
 - [x] Add a token warning
 - [x] Switch to the Chat API for larger models
 - [x] Add model auto-selection
-- [ ] Add parsed text caching. Need to wrap the text parsing in a function first, then store it in the session storage. Will be necessary for Chat Mode.
+- [x] Add parsed text caching. Need to wrap the text parsing in a function first, then store it in the session storage. Will be necessary for Chat Mode.
 """)
 
 # Top level greeting
@@ -41,52 +45,62 @@ Upload a document and a summary will be generated below. Use the Chat tab to ask
 """)
 st.header(' ') # Add some space
 
+# Maximum number of tokens to generate
+gen_max_tokens = 500
+
 # Upload file
 uploaded_file = st.file_uploader("Upload a document", type=["pdf", "docx"], help="Accepts PDF and Word documents.")
-text = ''
-tokens = 0
-if uploaded_file is None: # Prevent error message when no file is uploaded
-    st.stop()
-else:
-    st.toast("File successfully uploaded!")
-    name = uploaded_file.name
-    # Check the extension and load the appropriate library
-    if name.endswith(".pdf"):
-        import PyPDF2
-        pdfReader = PyPDF2.PdfReader(uploaded_file)
-        for page in range(len(pdfReader.pages)):
-            page_obj = pdfReader.pages[page]
-            text += page_obj.extract_text()
 
-    elif name.endswith(".docx"):
-        import docx2txt
-        text = docx2txt.process(uploaded_file)
-
-    # Count the number of tokens in the document
-    encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
-    output = encoding.encode(text)
-    tokens = len(encoding.encode(text))
-
-    # Choose the right model based on the number of tokens. GPT-3.5-Turbo only.
-    gen_max_tokens = 500
-    if tokens == 0:
-        st.error("Couldn't parse your document. Please try again.")
-        model = None
-        st.stop()
-    elif tokens <= 4096 - gen_max_tokens:
-        model = "gpt-3.5-turbo"
-    elif tokens <= 16385 - gen_max_tokens:
-        model = "gpt-3.5-turbo-16k"
+@st.cache_data(show_spinner=True, persist=True)
+def parse_document(uploaded_file):
+    text = ''
+    tokens = 0
+    if uploaded_file is None: # Prevent error message when no file is uploaded
+        return text, tokens, None
     else:
-        divider = math.ceil(tokens / 16385)
-        st.error(f"Your document is too long! You need to choose a smaller document or divide yours in {divider} parts.")
-        model = None
-        st.stop()
+        name = uploaded_file.name
+        # Check the extension and load the appropriate library
+        if name.endswith(".pdf"):
+            import PyPDF2
+            pdfReader = PyPDF2.PdfReader(uploaded_file)
+            for page in range(len(pdfReader.pages)):
+                page_obj = pdfReader.pages[page]
+                text += page_obj.extract_text()
 
-    # Display the token count and model used inside a collapsible container
-    with st.expander("Show details"):
-        st.write(f"Number of tokens: {tokens}")
-        st.write(f"Using model: {model}")
+        elif name.endswith(".docx"):
+            import docx2txt
+            text = docx2txt.process(uploaded_file)
+
+        # Count the number of tokens in the document
+        encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        output = encoding.encode(text)
+        tokens = len(encoding.encode(text))
+
+        # Choose the right model based on the number of tokens. GPT-3.5-Turbo only.
+        if tokens == 0:
+            model = None
+        elif tokens <= 4096 - gen_max_tokens:
+            model = "gpt-3.5-turbo"
+        elif tokens <= 16385 - gen_max_tokens:
+            model = "gpt-3.5-turbo-16k"
+        else:
+            divider = math.ceil(tokens / 16385)
+            st.error(f"Your document is too long! You need to choose a smaller document or divide yours in {divider} parts.")
+            model = None
+            st.stop()
+
+        # Display the token count and model used inside a collapsible container
+        with st.expander("Show details"):
+            st.write(f"Number of tokens: {tokens}")
+            st.write(f"Using model: {model}")
+
+        # Save the text to the session state
+        st.session_state["text"] = text
+
+        return text, tokens, model
+
+# Use the function to parse the uploaded file
+text, tokens, model = parse_document(uploaded_file)
 
 
 # Create the OpenAI request
@@ -124,7 +138,6 @@ def generate_completion(text):
 
         return response_text
 
-
     except OpenAIError as e:
         print(f"An error occurred: {e}")
         return None
@@ -147,10 +160,8 @@ if len(response_text) > 0:
 
     if clear.button("Clear summary"):
         del st.session_state.saved_text
+        del st.session_state.text
         st.cache_data.clear()
         output_wrapper.empty()
+        st.toast("Summary cleared!", icon="🔥")
         st.stop()
-
-
-
-
