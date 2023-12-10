@@ -28,7 +28,8 @@ st.sidebar.markdown("""
 Use this tab to get answers about your document.\n
 TODO: 
 - [x] Create working interactive mode
-- [ ] Add file upload and confirm caching works
+- [x] Add file upload and confirm caching works
+- [ ] Fix "Clear All" button. Cache is not cleared.
 """)
 
 # Top level greeting
@@ -49,7 +50,6 @@ parsed_text, tokens, model = parse_document(uploaded_file)
 if uploaded_file is not None:
     st.session_state["text"] = parsed_text
     text = parsed_text
-    st.toast("Document uploaded successfully!", icon="📄")
     doc_loaded.info("Loading complete!")
 else:
     text = st.session_state["text"]
@@ -120,5 +120,14 @@ if st.session_state.messages:  # Check if 'messages' is not empty
 def clear_chat_history():
     st.session_state.messages = []
 
+def clear_all():
+    st.session_state.messages = []
+    st.session_state["text"] = ""
+    del st.session_state["text"]
+    st.stop()
+
 if len(st.session_state.messages) > 0:
     st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
+st.sidebar.button('Clear All', on_click=clear_all)
+
+st.session_state
