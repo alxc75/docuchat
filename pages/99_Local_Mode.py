@@ -26,13 +26,21 @@ def check_make_or_cmake():
     if sys.platform == "darwin":
         # Check for 'make' on macOS
         try:
-            subprocess.check_output(["which", "make"])
-            st.write("make is installed. Proceeding...")
-        except subprocess.CalledProcessError:
-            st.write("make is not installed. Asking for permission.")
-            st.write("A pop-up will appear to install Xcode Command Line Tools. Please click the Reload button below"
+            subprocess.call("/usr/bin/make")
+            #subprocess.check_output(["which", "make"])
+            st.write("Make is found, proceeding...")
+            st.write("A pop-up may appear to install Xcode Command Line Tools. Please click the Reload button below"
                      " once the installation is complete.")
             st.button("Reload", on_click=st.rerun())
+            repo = "https://github.com/ggerganov/llama.cpp.git"
+            dir = os.path.dirname(os.getcwd())
+            subprocess.call(f"git clone {repo} {dir}/llama.cpp")
+            subprocess.call(f"cd {dir}/llama.cpp")
+            subprocess.call("make")
+
+        except subprocess.CalledProcessError:
+            st.write("Sorry, an error occurred. Please check the manual installation instructions below.")
+
     elif sys.platform == "win32":
         # Check for 'cmake' on Windows
         try:
