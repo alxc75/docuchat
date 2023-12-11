@@ -26,17 +26,34 @@ def check_make_or_cmake():
     if sys.platform == "darwin":
         # Check for 'make' on macOS
         try:
-            subprocess.call("/usr/bin/make")
+            subprocess.call("git")
             #subprocess.check_output(["which", "make"])
-            st.write("Make is found, proceeding...")
+            st.write("Git is found, proceeding...")
             st.write("A pop-up may appear to install Xcode Command Line Tools. Please click the Reload button below"
                      " once the installation is complete.")
-            st.button("Reload", on_click=st.rerun())
             repo = "https://github.com/ggerganov/llama.cpp.git"
-            dir = os.path.dirname(os.getcwd())
-            subprocess.call(f"git clone {repo} {dir}/llama.cpp")
-            subprocess.call(f"cd {dir}/llama.cpp")
-            subprocess.call("make")
+            dir = os.path.dirname(os. getcwd())
+            st.write(f"Working directory: {dir}")
+            st.write("Cloning llama.cpp")
+            command = f"git clone {repo} {dir}/llama.cpp"
+            subprocess.run(command, shell=True)
+            time.sleep(3)
+            st.write("Done, building for macos...")
+            move = f"cd {dir}/llama.cpp"
+            subprocess.run(move, shell=True)
+            time.sleep(2)
+            make = "/usr/bin/make"
+            cpp_dir = f"{dir}/llama.cpp"
+            subprocess.run(make, shell=True, cwd=cpp_dir)
+            st.write("Installation complete!")
+            time.sleep(1)
+            st.write("Installing server requirements...")
+            subprocess.run("pip3 install -r requirements.txt", shell=True, cwd=cpp_dir)
+            st.write("Done. Launching server...")
+            subprocess.run("./server -m models/stablelm-zephyr-3b.Q3_K_S.gguf -c 2048", shell=True, cwd=cpp_dir)
+            # At this point the server should have launched.
+            # TODO: finally fix this issue with working directory to download all to the right place.
+
 
         except subprocess.CalledProcessError:
             st.write("Sorry, an error occurred. Please check the manual installation instructions below.")
