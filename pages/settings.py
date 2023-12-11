@@ -2,6 +2,14 @@ import streamlit as st
 import json
 import os
 
+# Somehow prevents a streamlit bug with set_page_config warning appearing for no reason.
+def main():
+    print("Launching Settings")
+try:
+    main()
+except Exception as e:
+    print("An error has occurred: ", e)
+
 st.sidebar.title("Settings")
 st.sidebar.markdown("Use this tab to change your OpenAI API key.")
 st.title("Settings")
@@ -34,7 +42,8 @@ if new_api_key != api_key and new_api_key.strip() != "":
         json.dump(userinfo, f, indent=4)
     st.rerun()  # Force a rerun to reload the updated userinfo.json
 
-
+if __name__ == "__main__":
+    main()
 
 # ------------------- LICENSE -------------------
 # Docuchat, a smart knowledge assistant for your documents.
