@@ -52,8 +52,7 @@ def check_make_or_cmake():
             st.write("Done. Launching server...")
             subprocess.run("./server -m models/stablelm-zephyr-3b.Q3_K_S.gguf -c 2048", shell=True, cwd=cpp_dir)
             # At this point the server should have launched.
-            # TODO: finally fix this issue with working directory to download all to the right place.
-
+            # to-do: finally fix this issue with working directory to download all to the right place.
 
         except subprocess.CalledProcessError:
             st.write("Sorry, an error occurred. Please check the manual installation instructions below.")
