@@ -5,3 +5,4 @@ userinfo.json
 test/
 
 __pycache__/
+llama.cpp/

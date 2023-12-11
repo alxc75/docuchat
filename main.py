@@ -17,7 +17,8 @@ show_pages(
         Page("main.py", "Summary", ":house:"),
         Page("pages/1_chat.py", "Chat", ":speech_balloon:"),
         Page("pages/settings.py", "Settings", ":gear:"),
-        Page("pages/3_faq.py", "Help & FAQ", ":question:")
+        Page("pages/3_faq.py", "Help & FAQ", ":question:"),
+        Page("pages/99_Local_Mode.py", "Local Mode", "💻")
     ]
 )
 
