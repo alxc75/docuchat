@@ -1,10 +1,10 @@
 import streamlit as st
-from st_pages import Page, show_pages
 from openai import OpenAI
-from pages.settings import api_key
-from main import parse_document
+from helper import api_key
+from pages.Summarizer import parse_document
+import time
 
-#st.set_page_config(page_title="DocuChat - Chat Mode", page_icon=":speech_balloon:", layout="wide")
+st.set_page_config(page_title="DocuChat - Chat Mode", page_icon=":speech_balloon:", layout="wide")
 
 # Initialize the session key for the text. See the end of parse_document() for writing.
 if "text" not in st.session_state:
@@ -13,39 +13,44 @@ else:
     text = st.session_state["text"]
 
 # Create the navigation bar
-show_pages(
-    [
-        Page("main.py", "Summary", ":house:"),
-        Page("pages/1_chat.py", "Chat", ":speech_balloon:"),
-        Page("pages/settings.py", "Settings", ":gear:"),
-        Page("pages/3_faq.py", "Help & FAQ", ":question:")
-    ]
-)
+# show_pages(
+#     [
+#         Page("Home.py", "Home", ":house:"),
+#         Page("pages/Summarizer.py", "Summary", ":document:"),
+#         Page("pages/2_Chat.py", "Chat", ":speech_balloon:"),
+#         Page("pages/Settings.py", "Settings", ":gear:"),
+#         Page("pages/3_FAQ.py", "Help & FAQ", ":question:"),
+#         Page("pages/99_Local_Mode.py", "Local Mode", "💻")
+#     ]
+# )
 
-# Current page sidebar
-st.sidebar.title("Chat Mode")
-st.sidebar.markdown("""
-Use this tab to get answers about your document.\n
-TODO: 
-- [x] Create working interactive mode
-- [x] Add file upload and confirm caching works
-- [ ] Fix "Clear All" button. Cache is not cleared.
-""")
+def main():
+    # Current page sidebar
+    st.sidebar.title("Chat Mode")
+    st.sidebar.markdown("""
+    Use this tab to get answers about your document.\n
+    TODO: 
+    - [x] Create working interactive mode
+    - [x] Add file upload and confirm caching works
+    - [ ] Fix "Clear All" button. Cache is not cleared.
+    """)
 
 # Top level greeting
-title, modeToggle = st.columns(2)
-title.title("Chat Mode")
-modeToggle.toggle("Advanced Mode", value=False, key="simple_mode", disabled=True, help="Coming soon!")
+
+st.title("Chat Mode")
 st.markdown("Get answers to your questions about your document.")
 st.header(' ') # Add some space
+
+
+if __name__ == "__main__":
+    main()
 
 doc_loaded = st.empty()
 if len(st.session_state["text"]) > 0:
     doc_loaded.info("Using document loaded in memory. You can also upload a new document below.")
 
-
 # Upload file
-uploaded_file = st.file_uploader("Upload a document", type=["pdf", "docx"], help="Accepts PDF and Word documents.")
+uploaded_file = st.file_uploader("Upload a document", type=["pdf", "docx"], help="Accepts PDF and Word documents.", key="chat_upload")
 parsed_text, tokens, model = parse_document(uploaded_file)
 if uploaded_file is not None:
     st.session_state["text"] = parsed_text
@@ -130,7 +135,7 @@ if len(st.session_state.messages) > 0:
     st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
 st.sidebar.button('Clear All', on_click=clear_all)
 
-st.session_state
+
 
 
 

@@ -1,32 +1,26 @@
 import streamlit as st
 import json
 import os
-
-# Somehow prevents a streamlit bug with set_page_config warning appearing for no reason.
-def main():
-    print("Launching Settings")
-try:
-    main()
-except Exception as e:
-    print("An error has occurred: ", e)
+from helper import api_key
 
 st.sidebar.title("Settings")
 st.sidebar.markdown("Use this tab to change your OpenAI API key.")
 st.title("Settings")
 st.markdown("Please enter your OpenAI API key below.")
 
-# Check whether the userinfo.json file exists
-if os.path.exists("userinfo.json"):
-    # Check whether the API key is set
-    with open("userinfo.json", "r") as f:
-        userinfo = json.load(f)
-        if "api_key" in userinfo:
-            api_key = userinfo["api_key"]
-        else:
-            api_key = ""
-
-# If the userinfo.json file does not exist, create it
-else:
+# Duplicated from helper.py, shouldn't be necessary.
+# # Check whether the userinfo.json file exists
+# if os.path.exists("userinfo.json"):
+#     # Check whether the API key is set
+#     with open("userinfo.json", "r") as f:
+#         userinfo = json.load(f)
+#         if "api_key" in userinfo:
+#             api_key = userinfo["api_key"]
+#         else:
+#             api_key = ""
+#
+# # If the userinfo.json file does not exist, create it
+if not os.path.exists("userinfo.json"):
     with open("userinfo.json", "w") as f:
         userinfo = {}
         api_key = ""
@@ -41,9 +35,6 @@ if new_api_key != api_key and new_api_key.strip() != "":
     with open("userinfo.json", "w") as f:
         json.dump(userinfo, f, indent=4)
     st.rerun()  # Force a rerun to reload the updated userinfo.json
-
-if __name__ == "__main__":
-    main()
 
 # ------------------- LICENSE -------------------
 # Docuchat, a smart knowledge assistant for your documents.

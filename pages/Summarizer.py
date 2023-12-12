@@ -2,7 +2,7 @@ import streamlit as st
 from st_pages import Page, show_pages
 import tiktoken
 from openai import OpenAI, OpenAIError
-from pages.settings import api_key
+from helper import api_key
 import math
 
 st.set_page_config(page_title="DocuChat", page_icon=":speech_balloon:", layout="wide")
@@ -12,40 +12,44 @@ if "text" not in st.session_state:
     st.session_state["text"] = ""
 
 # Create the navigation bar
-show_pages(
-    [
-        Page("main.py", "Summary", ":house:"),
-        Page("pages/1_chat.py", "Chat", ":speech_balloon:"),
-        Page("pages/settings.py", "Settings", ":gear:"),
-        Page("pages/3_faq.py", "Help & FAQ", ":question:"),
-        Page("pages/99_Local_Mode.py", "Local Mode", "💻")
-    ]
-)
+# show_pages(
+#     [
+#         Page("Home.py", "Home", ":house:"),
+#         Page("pages/Summarizer.py", "Summary", ":document:"),
+#         Page("pages/2_Chat.py", "Chat", ":speech_balloon:"),
+#         Page("pages/Settings.py", "Settings", ":gear:"),
+#         Page("pages/3_FAQ.py", "Help & FAQ", ":question:"),
+#         Page("pages/99_Local_Mode.py", "Local Mode", "💻")
+#     ]
+# )
 
 # Current page sidebar
 st.sidebar.title("Summary")
 st.sidebar.markdown("""
 Use this tab to get a quick summary of your uploaded document.\n
-TODO: 
-- [ ] Check working cache between Chat and Summary
 """)
 
 # Top level greeting
-title, modeToggle = st.columns(2)
-title.title("DocuChat")
-modeToggle.toggle("Advanced Mode", value=False, key="simple_mode", disabled=True, help="Coming soon!")
-st.markdown("""
-Welcome to DocuChat, your smart knowledge assistant.
 
-Upload a document and a summary will be generated below. Use the Chat tab to ask questions about the document.
-""")
-st.header(' ') # Add some space
+def main():
+    st.title("Summarizer")
+    st.markdown("""
+    Welcome to DocuChat, your smart knowledge assistant.
+    
+    Upload a document and a summary will be generated below. Use the Chat tab to ask questions about the document.
+    """)
+    st.header(' ') # Add some space
+
+
+if __name__ == "__main__":
+    main()
+
 
 # Maximum number of tokens to generate
 gen_max_tokens = 500
 
 # Upload file
-uploaded_file = st.file_uploader("Upload a document", type=["pdf", "docx"], help="Accepts PDF and Word documents.")
+uploaded_file = st.file_uploader("Upload a document", type=["pdf", "docx"], help="Accepts PDF and Word documents.", key="summary_upload")
 
 @st.cache_data(show_spinner=True, persist=True)
 def parse_document(uploaded_file):
@@ -166,10 +170,6 @@ if len(response_text) > 0:
     if st.sidebar.button("Clear summary", on_click=clear_summary):
         st.stop()
 
-
-for key in st.session_state:
-    st.write(key)
-    st.write(st.session_state[key])
 
 
 # ------------------- LICENSE -------------------
