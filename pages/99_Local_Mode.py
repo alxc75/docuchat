@@ -22,29 +22,28 @@ time.sleep(1)
 st.write(f"Detected platform: {platform()}")
 time.sleep(1)
 
-def check_make_or_cmake():
+def install():
     if sys.platform == "darwin":
         # Check for 'make' on macOS
         try:
             subprocess.call("git")
-            #subprocess.check_output(["which", "make"])
             st.write("Git is found, proceeding...")
+            time.sleep(1)
             st.write("A pop-up may appear to install Xcode Command Line Tools. Please click the Reload button below"
                      " once the installation is complete.")
             repo = "https://github.com/ggerganov/llama.cpp.git"
-            dir = os.path.dirname(os. getcwd())
-            st.write(f"Working directory: {dir}")
+            path = os.path.dirname(os.path.realpath(__file__))
+            time.sleep(1)
+            st.write(f"Working directory: {path}")
+            time.sleep(1)
             st.write("Cloning llama.cpp")
-            command = f"git clone {repo} {dir}/llama.cpp"
-            subprocess.run(command, shell=True)
-            time.sleep(3)
-            st.write("Done, building for macos...")
-            move = f"cd {dir}/llama.cpp"
-            subprocess.run(move, shell=True)
+            subprocess.run(f"git clone {repo} {path}/llama.cpp", shell=True)
             time.sleep(2)
-            make = "/usr/bin/make"
-            cpp_dir = f"{dir}/llama.cpp"
-            subprocess.run(make, shell=True, cwd=cpp_dir)
+            st.write("Done, building for macos...")
+            subprocess.run(f"cd {path}/llama.cpp", shell=True)
+            time.sleep(2)
+            cpp_dir = f"{path}/llama.cpp"
+            subprocess.run("/usr/bin/make", shell=True, cwd=cpp_dir)
             st.write("Installation complete!")
             time.sleep(1)
             st.write("Installing server requirements...")
@@ -69,5 +68,10 @@ def check_make_or_cmake():
     else:
         st.write("Unsupported platform, please check the manual installation instructions below.")
 
-check_make_or_cmake()
 
+llama_path =  os.path.dirname(os.path.realpath(__file__)) + "/llama.cpp"
+if os.path.exists(llama_path):
+    st.write("Existing installation found.")
+else:
+    st.write("No existing installation found. Please install the required dependencies with the button below or manually.")
+st.button("Install", on_click=install)
