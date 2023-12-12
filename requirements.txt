@@ -9,3 +9,8 @@ tiktoken
 # Document Handlers
 pypdf2
 docx2txt
+
+# Local & RAG
+langchain
+chromadb
+huggingface-hub
