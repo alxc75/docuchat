@@ -1,7 +1,10 @@
 import streamlit as st
 from openai import OpenAI
+from main import main
 from helper import api_key
-from pages.Summarizer import parse_document
+from pages.summarizer import parse_document
+from st_pages import Page, show_pages
+
 import time
 
 st.set_page_config(page_title="DocuChat - Chat Mode", page_icon=":speech_balloon:", layout="wide")
@@ -13,16 +16,16 @@ else:
     text = st.session_state["text"]
 
 # Create the navigation bar
-# show_pages(
-#     [
-#         Page("Home.py", "Home", ":house:"),
-#         Page("pages/Summarizer.py", "Summary", ":document:"),
-#         Page("pages/2_Chat.py", "Chat", ":speech_balloon:"),
-#         Page("pages/Settings.py", "Settings", ":gear:"),
-#         Page("pages/3_FAQ.py", "Help & FAQ", ":question:"),
-#         Page("pages/99_Local_Mode.py", "Local Mode", "💻")
-#     ]
-# )
+show_pages(
+    [
+        Page("main.py", "Home", ":house:"),
+        Page("pages/summarizer.py", "Summary", ":document:"),
+        Page("pages/chat.py", "Chat", ":speech_balloon:"),
+        Page("pages/settings.py", "Settings", ":gear:"),
+        Page("pages/3_FAQ.py", "Help & FAQ", ":question:"),
+        Page("pages/99_Local_Mode.py", "Local Mode", "💻")
+    ]
+)
 
 def main():
     # Current page sidebar
