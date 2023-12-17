@@ -4,6 +4,7 @@ import os
 import sys
 import time
 import subprocess
+import threading
 
 st.title("Local Mode")
 st.subheader("Instructions to run a local model on you computer.")
@@ -25,6 +26,9 @@ if os.path.exists(server_path):
 else:
     install_flag = 0
 
+# Create session variable for the persistent stop server button
+if "server_running" not in st.session_state:
+    st.session_state.server_running = False
 
 def platform():
     if sys.platform == "win32":
@@ -93,6 +97,39 @@ def install():
 
 
 
+# Global variable to hold the subprocess
+proc = None
+
+def start_server():
+    global proc
+    if install_flag == 1:
+        st.write(model_path)
+        if num_filtered == 0:
+            st.write("No model found!")
+        else:
+            st.write("Starting server. Use the button below to stop it.")
+            # Start the subprocess in a new thread
+            proc = subprocess.Popen(["./server", "-m", f"{model_path}/{model}", "-c", "7892"], shell=False, cwd=llama_path)
+            if "process" not in st.session_state:
+                st.session_state.process = proc
+            # Wait for the process to complete
+            proc.wait()
+
+def stop_server():
+    if "process" not in st.session_state:
+        global proc
+    else:
+        proc = st.session_state.process
+    st.write(f"Found process: {proc}")
+    if proc:
+        st.toast("Local server stopped!")
+        # Terminate the subprocess
+        proc.terminate()
+        proc = None
+        # Remove the persistent stop button
+        st.session_state.server_running = False
+
+# Streamlit UI
 def start():
     if install_flag == 1:
         st.write(model_path)
@@ -100,8 +137,10 @@ def start():
             st.write("No model found!")
         else:
             st.write("Starting server. Use the button below to stop it.")
-            st.button("Stop Local Server", on_click=st.stop)
-            subprocess.run(["./server", "-m", f"{model_path}/{model}", "-c", "7892"], shell=False, cwd=llama_path)
+
+            # Stop button
+            st.button("Stop Local Server", key="server_stop", on_click=stop_server)
+
 # Note, the context window here is 8092 minus an approximate answer length of 200 tokens, hence 7892.
 # Will have to be changed according to the model chosen. Try to add a dropdown in the settings tab with
 # common model values. Or use a dropdown for other common models to download instead.
@@ -109,7 +148,6 @@ def start():
 
 def download_model():
     st.write("Downloading model, please wait...")
-    #subprocess.run("huggingface-cli download TheBloke/stablelm-zephyr-3b-GGUF stablelm-zephyr-3b.Q3_K_S.gguf --local-dir . --local-dir-use-symlinks False", shell=True, cwd=model_path)
     huggingface_hub.hf_hub_download(repo_id="TheBloke/stablelm-zephyr-3b-GGUF", filename="stablelm-zephyr-3b.Q4_K_M.gguf", local_dir=model_path, local_dir_use_symlinks=False)
     st.write("Done!")
 
@@ -121,7 +159,17 @@ if install_flag == 1 and num_filtered > 0:
         for file in filtered:
             st.write(file)
     model = st.selectbox("Select a model", filtered)
-    st.button("Start Local Server", on_click=start)
+    # Start thread button
+    if st.button("Start Local Server"):
+        # Start the server in a separate thread
+        server_thread = threading.Thread(target=start_server)
+        server_thread.start()
+        st.toast("Local server started!")
+        # Add persistent stop button
+        if "server_running" not in st.session_state:
+            st.session_state.server_running = True
+        else:
+            st.session_state.server_running = True
 elif install_flag == 1 and num_filtered == 0:
     st.write("No model found! Please install a model first with the button below or manually.")
     st.button("Download model", on_click=download_model)
@@ -130,3 +178,7 @@ else:
     st.write("No existing installation found. Please install the required dependencies with the button below or manually.")
     st.button("Install", on_click=install)
 
+if st.session_state.server_running:
+    st.button("Stop Local Server", key="server_stop", on_click=stop_server)
+
+st.session_state
