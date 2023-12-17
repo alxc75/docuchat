@@ -1,10 +1,8 @@
 import streamlit as st
 from openai import OpenAI
 from helper import api_key
-from pages.Summarizer import parse_document
-import time
+from main import parse_document
 
-st.set_page_config(page_title="DocuChat - Chat Mode", page_icon=":speech_balloon:", layout="wide")
 
 # Initialize the session key for the text. See the end of parse_document() for writing.
 if "text" not in st.session_state:
@@ -12,17 +10,6 @@ if "text" not in st.session_state:
 else:
     text = st.session_state["text"]
 
-# Create the navigation bar
-# show_pages(
-#     [
-#         Page("Home.py", "Home", ":house:"),
-#         Page("pages/Summarizer.py", "Summary", ":document:"),
-#         Page("pages/2_Chat.py", "Chat", ":speech_balloon:"),
-#         Page("pages/Settings.py", "Settings", ":gear:"),
-#         Page("pages/3_FAQ.py", "Help & FAQ", ":question:"),
-#         Page("pages/99_Local_Mode.py", "Local Mode", "💻")
-#     ]
-# )
 
 def main():
     # Current page sidebar
@@ -30,16 +17,14 @@ def main():
     st.sidebar.markdown("""
     Use this tab to get answers about your document.\n
     TODO: 
-    - [x] Create working interactive mode
-    - [x] Add file upload and confirm caching works
     - [ ] Fix "Clear All" button. Cache is not cleared.
     """)
 
-# Top level greeting
+    # Top level greeting
 
-st.title("Chat Mode")
-st.markdown("Get answers to your questions about your document.")
-st.header(' ') # Add some space
+    st.title("Chat Mode")
+    st.markdown("Get answers to your questions about your document.")
+    st.header(' ') # Add some space
 
 
 if __name__ == "__main__":
@@ -134,9 +119,6 @@ def clear_all():
 if len(st.session_state.messages) > 0:
     st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
 st.sidebar.button('Clear All', on_click=clear_all)
-
-
-
 
 
 # ------------------- LICENSE -------------------
