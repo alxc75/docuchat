@@ -2,6 +2,7 @@ import streamlit as st
 from openai import OpenAI
 from helper import api_key
 from main import parse_document
+import json
 
 
 # Initialize the session key for the text. See the end of parse_document() for writing.
@@ -47,9 +48,13 @@ else:
 # Request parameters
 gen_max_tokens = 500
 engine = "gpt-3.5-turbo-1106"
+with open("userinfo.json", "r") as f:
+    userinfo = json.load(f)
+    if userinfo["install_flag"] == 1:
+        endpoint = userinfo['endpoint'] # Use the local model if Local Mode is enabled
 
 # Create the OpenAI request
-client = OpenAI(api_key=api_key)
+client = OpenAI(api_key=api_key, base_url=endpoint)
 sys_prompt = ("You are an assistant designed to give summaries of uploaded documents. Your answers should be decently long, "
               "in the form of bullet points. Make sure to include every point discussed in the document. Being verbose is "
               "highly preferable compared to missing ideas in the document. Here is the document to recap:")

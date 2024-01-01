@@ -5,6 +5,7 @@ import sys
 import time
 import subprocess
 import threading
+import json
 
 st.title("Local Mode")
 st.subheader("Instructions to run a local model on you computer.")
@@ -16,15 +17,25 @@ llama_path = parent_path + "/llama.cpp"
 server_path = llama_path + "/server"
 model_path = llama_path + "/models"
 
-install_flag, filtered, num_filtered = None, None, None
+# Read the existing data from the userinfo.json file
+with open("userinfo.json", "r") as f:
+    userinfo = json.load(f)
+
+# Check if the server_path exists
 if os.path.exists(server_path):
     install_flag = 1
     # Count and fetch installed models
     filtered = [file for file in os.listdir(model_path) if not file.startswith("ggml") and not file.startswith(".")]
     num_filtered = len(filtered)
-
 else:
     install_flag = 0
+
+# Update the value of the install_flag key in the loaded data
+userinfo["install_flag"] = install_flag
+
+# Write the updated data back to the file
+with open("userinfo.json", "w") as f:
+    json.dump(userinfo, f, indent=4)
 
 # Create session variable for the persistent stop server button
 if "server_running" not in st.session_state:
@@ -148,6 +159,7 @@ def start():
 
 def download_model():
     st.write("Downloading model, please wait...")
+    #subprocess.run("huggingface-cli download TheBloke/stablelm-zephyr-3b-GGUF stablelm-zephyr-3b.Q3_K_S.gguf --local-dir . --local-dir-use-symlinks False", shell=True, cwd=model_path)
     huggingface_hub.hf_hub_download(repo_id="TheBloke/stablelm-zephyr-3b-GGUF", filename="stablelm-zephyr-3b.Q4_K_M.gguf", local_dir=model_path, local_dir_use_symlinks=False)
     st.write("Done!")
 
@@ -170,6 +182,7 @@ if install_flag == 1 and num_filtered > 0:
             st.session_state.server_running = True
         else:
             st.session_state.server_running = True
+        #st.button("Stop Local Server", key="server_stop", on_click=stop_server)
 elif install_flag == 1 and num_filtered == 0:
     st.write("No model found! Please install a model first with the button below or manually.")
     st.button("Download model", on_click=download_model)
@@ -182,3 +195,20 @@ if st.session_state.server_running:
     st.button("Stop Local Server", key="server_stop", on_click=stop_server)
 
 st.session_state
+
+# ------------------- LICENSE -------------------
+# Docuchat, a smart knowledge assistant for your documents.
+# Copyright © 2024 xTellarin
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see https://www.gnu.org/licenses/.

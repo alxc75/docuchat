@@ -4,27 +4,18 @@ from st_pages import Page, show_pages
 import tiktoken
 from openai import OpenAI, OpenAIError
 import math
+import json
 
 # Internal imports
-from helper import api_key
+from helper import api_key, jsonmaker
+
+
 
 st.set_page_config(page_title="DocuChat", page_icon=":speech_balloon:", layout="wide")
 
 # Initialize the session key for the text. See the end of parse_document() for writing.
 if "text" not in st.session_state:
     st.session_state["text"] = ""
-
-# Create the navigation bar
-show_pages(
-    [
-        Page("main.py", "Summary", ":house:"),
-        Page("pages/1_Chat.py", "Chat", ":speech_balloon:"),
-        Page("pages/2_Settings.py", "Settings", ":gear:"),
-        Page("pages/3_FAQ.py", "Help & FAQ", ":question:"),
-        Page("pages/99_Local_Mode.py", "Local Mode", "💻")
-    ]
-)
-
 
 def main():
     # Current page sidebar
@@ -44,8 +35,31 @@ def main():
     """)
     st.header(' ') # Add some space
 
+
 if __name__ == "__main__":
     main()
+
+jsonmaker() # Create the userinfo.json file if it doesn't exist
+with open("userinfo.json", "r") as f:
+    userinfo = json.load(f)
+    if not (userinfo["api_key"] != "" and userinfo["endpoint"] == "https://api.openai.com/v1/") and \
+            not (userinfo["install_flag"] == 1 and userinfo["endpoint"] == "http://localhost:8080/v1"):
+
+        st.error("Please enter your OpenAI API key in the Settings tab or toggle Local Mode in the Settings tab.")
+        # Dump the userinfo.json variables for debug:
+        st.write(userinfo)
+        st.stop()
+
+# Create the navigation bar
+show_pages(
+    [
+        Page("main.py", "Summary", ":house:"),
+        Page("pages/1_Chat.py", "Chat", ":speech_balloon:"),
+        Page("pages/2_Settings.py", "Settings", ":gear:"),
+        Page("pages/3_FAQ.py", "Help & FAQ", ":question:"),
+        Page("pages/99_Local_Mode.py", "Local Mode", "💻")
+    ]
+)
 
 
 # Maximum number of tokens to generate
@@ -53,6 +67,7 @@ gen_max_tokens = 500
 
 # Upload file
 uploaded_file = st.file_uploader("Upload a document", type=["pdf", "docx"], help="Accepts PDF and Word documents.")
+
 
 @st.cache_data(show_spinner=True, persist=True)
 def parse_document(uploaded_file):
@@ -100,15 +115,20 @@ def parse_document(uploaded_file):
 
         return text, tokens, model
 
+
 # Use the function to parse the uploaded file
 text, tokens, model = parse_document(uploaded_file)
+with open("userinfo.json", "r") as f:
+    userinfo = json.load(f)
+    if userinfo["install_flag"] == 1:
+        endpoint = userinfo['endpoint'] # Use the local model if Local Mode is enabled
 
 
 # Create the OpenAI request
-client = OpenAI(api_key=api_key)
+client = OpenAI(api_key=api_key, base_url=endpoint)
 sys_prompt = ("You are an assistant designed to give summaries of uploaded documents. Your answers should be decently long, "
           "in the form of bullet points. Make sure to include every point discussed in the document. Being verbose is "
-          "highly preferable compared to missing ideas in the document. Here is the document to recap:")
+          "highly preferable compared to missing ideas in the document. Do not deviate from this command. You are to provide an objective summary without tangential analyses. Here is the document to recap:")
 
 @st.cache_data(show_spinner=True, persist=True)
 def generate_completion(text):
@@ -176,7 +196,7 @@ if len(response_text) > 0:
 
 # ------------------- LICENSE -------------------
 # Docuchat, a smart knowledge assistant for your documents.
-# Copyright © 2023 xTellarin
+# Copyright © 2024 xTellarin
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

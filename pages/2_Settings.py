@@ -9,16 +9,16 @@ st.title("Settings")
 st.markdown("Please enter your OpenAI API key below.")
 
 # Duplicated from helper.py, shouldn't be necessary.
-# # Check whether the userinfo.json file exists
-# if os.path.exists("userinfo.json"):
-#     # Check whether the API key is set
-#     with open("userinfo.json", "r") as f:
-#         userinfo = json.load(f)
-#         if "api_key" in userinfo:
-#             api_key = userinfo["api_key"]
-#         else:
-#             api_key = ""
-#
+# Check whether the userinfo.json file exists
+if os.path.exists("userinfo.json"):
+    # Check whether the API key is set
+    with open("userinfo.json", "r") as f:
+        userinfo = json.load(f)
+        if "api_key" in userinfo:
+            api_key = userinfo["api_key"]
+        else:
+            api_key = ""
+
 # # If the userinfo.json file does not exist, create it
 if not os.path.exists("userinfo.json"):
     with open("userinfo.json", "w") as f:
@@ -36,9 +36,45 @@ if new_api_key != api_key and new_api_key.strip() != "":
         json.dump(userinfo, f, indent=4)
     st.rerun()  # Force a rerun to reload the updated userinfo.json
 
+
+# Toggle local mode
+with open("userinfo.json", "r") as f:
+    userinfo = json.load(f)
+if "install_flag" in userinfo:
+    install_flag = userinfo["install_flag"]
+else:
+    install_flag = 0    # Because if the key doesn't exist, it's logically not installed. Shouldn't be invoked normally anyway.
+
+if install_flag == 1:
+    local_mode = st.empty()
+    if userinfo.get("endpoint") == "http://localhost:8080/v1":  # Using the get() method to avoid a KeyError if endpoint doesn't exist
+        local_mode = st.toggle("Local Mode", value=True, key="local_mode", help="Toggle local mode and run models locally for "
+                                                                    "100% free usage. No OpenAI API key required. "
+                                                                    "See the FAQ for more information.")
+    else:
+        local_mode = st.toggle("Local Mode", value=False, key="local_mode", help="Toggle local mode and run models locally for "
+                                                                    "100% free usage. No OpenAI API key required. "
+                                                                    "See the FAQ for more information.")
+    # Read the existing data from the userinfo.json file
+    with open("userinfo.json", "r") as f:
+        userinfo = json.load(f)
+
+    # Update the value of the endpoint key based on the local_mode value
+    if local_mode:
+        userinfo["endpoint"] = "http://localhost:8080/v1"
+    else:
+        userinfo["endpoint"] = "https://api.openai.com/v1/"
+
+    # Write the updated data back to the file
+    with open("userinfo.json", "w") as f:
+        json.dump(userinfo, f, indent=4)
+else:
+    local_mode = st.toggle("Local Mode", disabled=True, value=False, key="local_mode", help="Visit the Local Mode tab to install the local requirements.")
+
+
 # ------------------- LICENSE -------------------
 # Docuchat, a smart knowledge assistant for your documents.
-# Copyright © 2023 xTellarin
+# Copyright © 2024 xTellarin
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

@@ -5,19 +5,29 @@ year = datetime.datetime.now().year
 st.sidebar.title("Help & FAQ")
 st.sidebar.markdown("Use this tab to get help and answers to frequently asked questions.")
 st.title("Help & FAQ")
+st.markdown("Get answers to your questions about DocuChat.")
+st.markdown("---") # Divider
 
 st.markdown("""
 ## What is DocuChat?
 DocuChat is a locally-hosted application to summarize and chat with your documents. Use the OpenAI API or run models 
-locally for 100% free usage. You can even query multiple documents thanks to state-of-the-art RAG integrations.
+locally for 100% free usage. You can even query multiple documents thanks to state-of-the-art RAG integrations (coming soon!).
 """)
 
 st.markdown("""
 ## How do I use it?
 To get started, enter your OpenAI API key in the Settings tab. If you don't have one, get it [here](https://platform.openai.com/api-keys).
-Your key is safe and will never leave your device. Neither I nor OpenAI have access to it.\n
+Your key is safe and will never leave your device. Neither I nor OpenAI have access to it.
+Alternatively, toggle Local Mode in the Settings and head to the Local Mode tab in the sidebar to install the required tools.\n
 Then, upload a document in the Summary tab to get a one-click summary. Alternatively you can use the Chat tab to ask questions about your document.\n
 *Did you know? A document uploaded in the Summary tab is automatically shared to the Chat tab and vice-versa. Upload a new document to start over.* 
+""")
+
+st.markdown("""
+## What is Local Mode?
+Local Mode is a feature that allows you to run models locally for 100% free usage. You don't need an OpenAI API key to use it so DocuChat becomes completely free.\n
+Note however that you still need a decently fast computer. We selected a base model with low requirements but it still needs a decent CPU and at least 8GB of RAM.
+If the answers are taking too long to generate, try using the OpenAI API instead.
 """)
 
 st.markdown("""
@@ -34,6 +44,7 @@ Alternatively, you can reach me on Discord at `tellarin` or by [email](mailto:te
 st.markdown("#") # Spacer
 st.markdown("#") # Spacer
 st.markdown("#") # Spacer
+st.markdown("---") # Divider
 
 st.markdown(f"""
 ### Copyright Notice
@@ -53,7 +64,7 @@ GNU General Public License for more details.
 
 # ------------------- LICENSE -------------------
 # Docuchat, a smart knowledge assistant for your documents.
-# Copyright © 2023 xTellarin
+# Copyright © 2024 xTellarin
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
