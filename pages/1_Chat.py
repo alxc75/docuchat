@@ -123,7 +123,7 @@ st.sidebar.button('Clear All', on_click=clear_all)
 
 # ------------------- LICENSE -------------------
 # Docuchat, a smart knowledge assistant for your documents.
-# Copyright © 2023 xTellarin
+# Copyright © 2024 xTellarin
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
