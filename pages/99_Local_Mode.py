@@ -99,9 +99,9 @@ def install():
             subprocess.check_output(["where", "cmake"])
             st.write("cmake is installed, proceeding...")
         except subprocess.CalledProcessError:
-            st.write("cmake is not installed. Please install it from https://cmake.org/download/ (you want the binaries) and click the "
+            st.write("cmake is not installed. Please install it from https://cmake.org/download/ (you want the x64 installer in the Binary Distributions). Make sure you add Cmake to your system path when the installer prompts you and click the "
                      "Reload button below.")
-            st.button("Reload", on_click=st.rerun())
+            st.button("Reload")
     else:
         st.write("Unsupported platform, please check the manual installation instructions below.")
 
