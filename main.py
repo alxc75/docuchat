@@ -47,7 +47,7 @@ with open("userinfo.json", "r") as f:
 
         st.error("Please enter your OpenAI API key in the Settings tab or toggle Local Mode in the Settings tab.")
         # Dump the userinfo.json variables for debug:
-        st.write(userinfo)
+        # st.write(userinfo)
         st.stop()
 
 # Create the navigation bar
