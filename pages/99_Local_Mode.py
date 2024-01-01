@@ -160,7 +160,7 @@ def start():
 def download_model():
     st.write("Downloading model, please wait...")
     #subprocess.run("huggingface-cli download TheBloke/stablelm-zephyr-3b-GGUF stablelm-zephyr-3b.Q3_K_S.gguf --local-dir . --local-dir-use-symlinks False", shell=True, cwd=model_path)
-    huggingface_hub.hf_hub_download(repo_id="TheBloke/stablelm-zephyr-3b-GGUF", filename="stablelm-zephyr-3b.Q4_K_M.gguf", local_dir=model_path, local_dir_use_symlinks=False)
+    huggingface_hub.hf_hub_download(repo_id="TheBloke/dolphin-2.6-mistral-7B-GGUF", filename="dolphin-2.6-mistral-7b.Q4_K_M.gguf", local_dir=model_path, local_dir_use_symlinks=False)
     st.write("Done!")
 
 
@@ -186,13 +186,35 @@ if install_flag == 1 and num_filtered > 0:
 elif install_flag == 1 and num_filtered == 0:
     st.write("No model found! Please install a model first with the button below or manually.")
     st.button("Download model", on_click=download_model)
-    st.markdown("Want more models? Get them [here](https://huggingface.co/TheBloke).")
+    st.markdown("Want more models? Get them [here](https://huggingface.co/TheBloke). Make sure they use the ChatML prompt format and are in the .gguf format.")
 else:
     st.write("No existing installation found. Please install the required dependencies with the button below or manually.")
     st.button("Install", on_click=install)
 
 if st.session_state.server_running:
     st.button("Stop Local Server", key="server_stop", on_click=stop_server)
+
+
+# Manual installation instructions
+with st.expander("Manual Installation Instructions", expanded=False):
+    st.markdown("""
+    ## Manual Installation Instructions
+    If the automatic installation failed, you can follow these instructions to install the required dependencies manually.
+    
+    - **Step 1:** Install make (macOS and Linux) or [cmake](https://cmake.org/download/) (Windows) and git. You should already have the latter unless you've downloaded DocuChat as a ZIP file.
+    - **Step 2:** Clone the llama.cpp repository from [GitHub](https://github.com/ggerganov/llama.cpp.git) into the root of the DocuChat folder:
+    ```bash
+    git clone https://github.com/ggerganov/llama.cpp.git
+    ```
+    - **Step 3:** Compile the repo. This may take a while depending on your computer. Get the instruction for your platform [here](https://github.com/ggerganov/llama.cpp?tab=readme-ov-file#build).
+    - **Step 4:** Install the Python requirements. You can do this by running the following command still in the root of the DocuChat folder: 
+    ```bash
+    pip3 install -r requirements.txt
+    ```
+    - **Step 5:** Download a model. You can do this by clicking the button below or by downloading them [here](https://huggingface.co/TheBloke). Make sure they use the ChatML prompt format (Dolphin, OpenOrca, OpenHermes, OpenChat-3.5, etc.) and are in the .gguf format.
+    """)
+
+    st.button("Download model", on_click=download_model)
 
 
 # ------------------- LICENSE -------------------

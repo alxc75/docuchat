@@ -26,7 +26,7 @@ Then, upload a document in the Summary tab to get a one-click summary. Alternati
 st.markdown("""
 ## What is Local Mode?
 Local Mode is a feature that allows you to run models locally for 100% free usage. You don't need an OpenAI API key to use it so DocuChat becomes completely free.\n
-Note however that you still need a decently fast computer. We selected a base model with low requirements but it still needs a decent CPU and at least 8GB of RAM.
+Note however that you still need a decently fast computer. We selected a base model with low to midrange requirements but it still needs a decent CPU and at least 8GB of RAM.
 If the answers are taking too long to generate, try using the OpenAI API instead.
 """)
 
