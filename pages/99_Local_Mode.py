@@ -99,7 +99,7 @@ def install():
             subprocess.check_output(["where", "cmake"])
             st.write("cmake is installed, proceeding...")
         except subprocess.CalledProcessError:
-            st.write("cmake is not installed. Please install it from https://cmake.org/download/ and click the "
+            st.write("cmake is not installed. Please install it from https://cmake.org/download/ (you want the binaries) and click the "
                      "Reload button below.")
             st.button("Reload", on_click=st.rerun())
     else:
@@ -153,8 +153,7 @@ def start():
             st.button("Stop Local Server", key="server_stop", on_click=stop_server)
 
 # Note, the context window here is 8092 minus an approximate answer length of 200 tokens, hence 7892.
-# Will have to be changed according to the model chosen. Try to add a dropdown in the settings tab with
-# common model values. Or use a dropdown for other common models to download instead.
+# Will have to be changed according to the model chosen.
 
 
 def download_model():
