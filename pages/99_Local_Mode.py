@@ -84,7 +84,7 @@ def install():
             subprocess.run("pip3 install -r requirements.txt", shell=True, cwd=parent_path)
             time.sleep(1)
             st.write("Downloading default model...")
-            subprocess.run("huggingface-cli download TheBloke/stablelm-zephyr-3b-GGUF stablelm-zephyr-3b.Q3_K_S.gguf --local-dir . --local-dir-use-symlinks False", shell=True, cwd=model_path)
+            subprocess.run("huggingface-cli download TheBloke/dolphin-2.6-mistral-7B-GGUF dolphin-2.6-mistral-7b.Q4_K_M.gguf --local-dir . --local-dir-use-symlinks False", shell=True, cwd=model_path)
             st.markdown("""
             Installation complete!\n
             You can now start the local server by clicking the button below.
@@ -194,7 +194,6 @@ else:
 if st.session_state.server_running:
     st.button("Stop Local Server", key="server_stop", on_click=stop_server)
 
-st.session_state
 
 # ------------------- LICENSE -------------------
 # Docuchat, a smart knowledge assistant for your documents.
