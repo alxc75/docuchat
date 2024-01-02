@@ -6,6 +6,7 @@ import time
 import subprocess
 import threading
 import json
+import platform
 
 st.title("Local Mode")
 st.subheader("Instructions to run a local model on you computer.")
@@ -41,7 +42,7 @@ with open("userinfo.json", "w") as f:
 if "server_running" not in st.session_state:
     st.session_state.server_running = False
 
-def platform():
+def get_platform():
     if sys.platform == "win32":
         return "Windows"
     elif sys.platform == "darwin":
@@ -56,8 +57,8 @@ def install():
     time.sleep(0.5)
     st.write("Attempting OS detection...")
     time.sleep(0.5)
-    if platform() != "Unknown":
-        st.write(f"Detected platform: {platform()}")
+    if get_platform() != "Unknown":
+        st.write(f"Detected platform: {get_platform()}")
     else:
         st.write("Your platform couldn't be automatically detected. Please follow the manual instructions below.")
     time.sleep(0.5)
@@ -94,14 +95,37 @@ def install():
             st.write("Sorry, an error occurred. Please check the manual installation instructions below.")
 
     elif sys.platform == "win32":
-        # Check for 'cmake' on Windows
+        # Check for 'cmake' on Windows. It would be nice to eventually switch to an automated install here as well: https://silentinstallhq.com/cmake-silent-install-how-to-guide
         try:
+            llama_path = parent_path + "\llama.cpp"
             subprocess.check_output(["where", "cmake"])
-            st.write("cmake is installed, proceeding...")
+            st.write("Cmake is installed, proceeding...")
+            subprocess.call('git', shell=False)
+            st.write("Git is found, proceeding...")
+            time.sleep(1)
+            repo = "https://github.com/ggerganov/llama.cpp.git"
+            time.sleep(1)
+            st.write(f"Cloning llama.cpp into {llama_path}")
+            subprocess.run(f"git clone {repo} {parent_path}/llama.cpp", shell=True)
+            time.sleep(2)
+            st.write("Done, building for Windows...")
+            time.sleep(2)
+            subprocess.run("rm CMakeCache.txt", cwd=llama_path)
+            subprocess.run("cmake .", cwd=llama_path)
+            subprocess.run("mkdir build", cwd=llama_path)
+            build_dir = parent_path + r'\llama.cpp\build'
+            #subprocess.run("cmake ..", cwd=build_dir)
+            st.write(f"Building into {build_dir}")
+            subprocess.run(f"cmake --build {build_dir} --config Release", cwd=llama_path)
+
+
         except subprocess.CalledProcessError:
             st.write("cmake is not installed. Please install it from https://cmake.org/download/ (you want the x64 installer in the Binary Distributions). Make sure you add Cmake to your system path when the installer prompts you and click the "
-                     "Reload button below.")
+                     "Reload button below. Also please check you have `git` on your system.")
             st.button("Reload")
+
+    elif sys.platform == "linux":
+        st.write("Sorry, Linux distributions don't have an autoinstaller (yet). Please follow the manual installation instructions below.")
     else:
         st.write("Unsupported platform, please check the manual installation instructions below.")
 
@@ -190,6 +214,11 @@ else:
     st.write("No existing installation found. Please install the required dependencies with the button below or manually.")
     st.button("Install", on_click=install)
 
+if get_platform() == "Windows":
+    st.info("Make sure Cmake is installed! Download it from https://cmake.org/download/ (you want the x64 installer in the Binary Distributions). Don't forget to add Cmake to your system path when the installer prompts you. ")
+if "ARM" in platform.machine() or "ARM" in platform.processor():
+    st.error("Sorry, the auto-installer doesn't work on Windows ARM64 platforms. Please refer to the manual installation instructions below.")
+
 if st.session_state.server_running:
     st.button("Stop Local Server", key="server_stop", on_click=stop_server)
 
@@ -198,7 +227,7 @@ if st.session_state.server_running:
 with st.expander("Manual Installation Instructions", expanded=False):
     st.markdown("""
     ## Manual Installation Instructions
-    If the automatic installation failed, you can follow these instructions to install the required dependencies manually.
+    If the automatic installation failed or your system is not supported, you can follow these instructions to install the required dependencies manually.
     
     - **Step 1:** Install make (macOS and Linux) or [cmake](https://cmake.org/download/) (Windows) and git. You should already have the latter unless you've downloaded DocuChat as a ZIP file.
     - **Step 2:** Clone the llama.cpp repository from [GitHub](https://github.com/ggerganov/llama.cpp.git) into the root of the DocuChat folder:
@@ -210,7 +239,7 @@ with st.expander("Manual Installation Instructions", expanded=False):
     ```bash
     pip3 install -r requirements.txt
     ```
-    - **Step 5:** Download a model. You can do this by clicking the button below or by downloading them [here](https://huggingface.co/TheBloke). Make sure they use the ChatML prompt format (Dolphin, OpenOrca, OpenHermes, OpenChat-3.5, etc.) and are in the .gguf format.
+    - **Step 5:** Download a model. You can do this by clicking the button below or by downloading them [here](https://huggingface.co/TheBloke). Make sure they use the **ChatML** prompt format (Dolphin, OpenOrca, OpenHermes, OpenChat-3.5, etc.) and are in the **.gguf** format.
     """)
 
     st.button("Download model", on_click=download_model)
