@@ -64,6 +64,7 @@ def install():
     time.sleep(0.5)
 
     if sys.platform == "darwin":
+        llama_path = parent_path + "/llama.cpp"
         # Check for 'make' on macOS
         try:
             subprocess.call("git")
@@ -182,7 +183,7 @@ def start():
 
 def download_model():
     st.write("Downloading model, please wait...")
-    #subprocess.run("huggingface-cli download TheBloke/stablelm-zephyr-3b-GGUF stablelm-zephyr-3b.Q3_K_S.gguf --local-dir . --local-dir-use-symlinks False", shell=True, cwd=model_path)
+    #subprocess.run("huggingface-cli download TheBloke/stablelm-zephyr-3b-GGUF stablelm-zephyr-3b.Q3_K_S.gguf --local-dir . --local-dir-use-symlinks False", shell=True, cwd=model_path)    # Old model for testing, doesn't use the ChatML prompt format
     huggingface_hub.hf_hub_download(repo_id="TheBloke/dolphin-2.6-mistral-7B-GGUF", filename="dolphin-2.6-mistral-7b.Q4_K_M.gguf", local_dir=model_path, local_dir_use_symlinks=False)
     st.write("Done!")
 
