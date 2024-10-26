@@ -51,10 +51,14 @@ The latter is recommended if you plan on using Python in the future.
 Then open a new terminal window and run `pip install streamlit` to install Streamlit globally. Now you can run DocuChat with `streamlit run main.py`.
 
 ###
-**Q: I'm getting a `ModuleNotFoundError: No module named 'st_pages' (or other)` error when I try to run DocuChat**
+**Q: I'm getting a `ModuleNotFoundError: No module named _xxx_` error when I try to run DocuChat**
 
 A: Open a new terminal window and run `pip install -r requirements.txt` to install the missing dependencies, then try running DocuChat again. Shouldn't happen but Python is weird sometimes.
 
+###
+**Q: Can I download any model for local use?**
+
+A: As long as your model uses the ChatML instruction template, yes. You can find models on the [HuggingFace Hub](https://huggingface.co/models?pipeline_tag=text-generation&sort=trending).
 ## Contributing
 DocuChat is still in active development and you are very welcome to contribute to its development! To get started, fork the repo, make your changes and submit a pull request.
 
