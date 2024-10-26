@@ -20,14 +20,14 @@ git clone https://github.com/xTellarin/docuchat.git
 If you don't have Anaconda installed, grab it [here](https://www.anaconda.com/products/individual).
 
 Next, move into the DocuChat folder to create a new environment and install the dependencies:
-```bash 
+```bash
 conda create -n docuchat python=3.11
-``` 
+```
 ```bash
 conda activate docuchat
 ```
 ```bash
-pip install -r requirements.txt
+cd docuchat && pip install -r requirements.txt
 ```
 
 ### Using Pip
@@ -41,8 +41,8 @@ All you need to do to use DocuChat is run the following terminal command in your
 streamlit run main.py
 ```
 Your browser will automatically open DocuChat at http://localhost:8501/.
-You'll need to get your OpenAI API key (get it [here](https://platform.openai.com/account/api-keys)) and enter it into the Settings tab. Alternatively, you can run models locally for free (coming soon!). 
- 
+You'll need to get your OpenAI API key (get it [here](https://platform.openai.com/account/api-keys)) and enter it into the Settings tab. Alternatively, you can run models locally for free (coming soon!).
+
 # FAQ
 **Q: [Windows] I'm getting an `streamlit : The term 'streamlit' is not recognized as the name of a cmdlet` error when I try to run DocuChat**
 
