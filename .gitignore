@@ -1,9 +1,0 @@
-.DS_Store
-.idea/
-
-userinfo.json
-test/
-
-__pycache__/
-llama.cpp/
-venv/
