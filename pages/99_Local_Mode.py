@@ -229,14 +229,14 @@ with st.expander("Manual Installation Instructions", expanded=False):
     st.markdown("""
     ## Manual Installation Instructions
     If the automatic installation failed or your system is not supported, you can follow these instructions to install the required dependencies manually.
-    
+
     - **Step 1:** Install make (macOS and Linux) or [cmake](https://cmake.org/download/) (Windows) and git. You should already have the latter unless you've downloaded DocuChat as a ZIP file.
     - **Step 2:** Clone the llama.cpp repository from [GitHub](https://github.com/ggerganov/llama.cpp.git) into the root of the DocuChat folder:
     ```bash
     git clone https://github.com/ggerganov/llama.cpp.git
     ```
     - **Step 3:** Compile the repo. This may take a while depending on your computer. Get the instruction for your platform [here](https://github.com/ggerganov/llama.cpp?tab=readme-ov-file#build).
-    - **Step 4:** Install the Python requirements. You can do this by running the following command still in the root of the DocuChat folder: 
+    - **Step 4:** Install the Python requirements. You can do this by running the following command still in the root of the DocuChat folder:
     ```bash
     pip3 install -r requirements.txt
     ```

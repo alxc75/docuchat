@@ -17,7 +17,7 @@ def main():
     st.sidebar.title("Chat Mode")
     st.sidebar.markdown("""
     Use this tab to get answers about your document.\n
-    TODO: 
+    TODO:
     - [ ] Fix "Clear All" button. Cache is not cleared.
     """)
 
@@ -47,7 +47,7 @@ else:
 
 # Request parameters
 gen_max_tokens = 500
-engine = "gpt-3.5-turbo-1106"
+engine = "gpt-4o-mini"
 with open("userinfo.json", "r") as f:
     userinfo = json.load(f)
     if userinfo["install_flag"] == 1:

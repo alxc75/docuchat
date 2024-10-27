@@ -1,6 +1,5 @@
 # External imports
 import streamlit as st
-from st_pages import Page, show_pages
 import tiktoken
 from openai import OpenAI, OpenAIError
 import math
@@ -30,7 +29,7 @@ def main():
     modeToggle.toggle("Advanced Mode", value=False, key="simple_mode", disabled=True, help="Coming soon!")
     st.markdown("""
     Welcome to DocuChat, your smart knowledge assistant.
-    
+
     Upload a document and a summary will be generated below. Use the Chat tab to ask questions about the document.
     """)
     st.header(' ') # Add some space
@@ -51,16 +50,13 @@ with open("userinfo.json", "r") as f:
         st.stop()
 
 # Create the navigation bar
-show_pages(
-    [
-        Page("main.py", "Summary", ":house:"),
-        Page("pages/1_Chat.py", "Chat", ":speech_balloon:"),
-        Page("pages/2_Settings.py", "Settings", ":gear:"),
-        Page("pages/3_FAQ.py", "Help & FAQ", ":question:"),
-        Page("pages/99_Local_Mode.py", "Local Mode", "💻")
-    ]
-)
+entry = st.Page("main.py", "Summary", ":house:"),
+chat = st.Page("pages/1_Chat.py", "Chat", ":speech_balloon:"),
+settings = st.Page("pages/2_Settings.py", "Settings", ":gear:"),
+faq = st.Page("pages/3_FAQ.py", "Help & FAQ", ":question:"),
+local = st.Page("pages/99_Local_Mode.py", "Local Mode", "💻")
 
+pg = st.navigation([entry, chat, settings, faq, local])
 
 # Maximum number of tokens to generate
 gen_max_tokens = 500

@@ -20,14 +20,14 @@ git clone https://github.com/xTellarin/docuchat.git
 If you don't have Anaconda installed, grab it [here](https://www.anaconda.com/products/individual).
 
 Next, move into the DocuChat folder to create a new environment and install the dependencies:
-```bash 
+```bash
 conda create -n docuchat python=3.11
-``` 
+```
 ```bash
 conda activate docuchat
 ```
 ```bash
-pip install -r requirements.txt
+cd docuchat && pip install -r requirements.txt
 ```
 
 ### Using Pip
@@ -41,8 +41,8 @@ All you need to do to use DocuChat is run the following terminal command in your
 streamlit run main.py
 ```
 Your browser will automatically open DocuChat at http://localhost:8501/.
-You'll need to get your OpenAI API key (get it [here](https://platform.openai.com/account/api-keys)) and enter it into the Settings tab. Alternatively, you can run models locally for free (coming soon!). 
- 
+You'll need to get your OpenAI API key (get it [here](https://platform.openai.com/account/api-keys)) and enter it into the Settings tab. Alternatively, you can run models locally for free (coming soon!).
+
 # FAQ
 **Q: [Windows] I'm getting an `streamlit : The term 'streamlit' is not recognized as the name of a cmdlet` error when I try to run DocuChat**
 
@@ -51,10 +51,14 @@ The latter is recommended if you plan on using Python in the future.
 Then open a new terminal window and run `pip install streamlit` to install Streamlit globally. Now you can run DocuChat with `streamlit run main.py`.
 
 ###
-**Q: I'm getting a `ModuleNotFoundError: No module named 'st_pages' (or other)` error when I try to run DocuChat**
+**Q: I'm getting a `ModuleNotFoundError: No module named _xxx_` error when I try to run DocuChat**
 
 A: Open a new terminal window and run `pip install -r requirements.txt` to install the missing dependencies, then try running DocuChat again. Shouldn't happen but Python is weird sometimes.
 
+###
+**Q: Can I download any model for local use?**
+
+A: As long as your model uses the ChatML instruction template, yes. You can find models on the [HuggingFace Hub](https://huggingface.co/models?pipeline_tag=text-generation&sort=trending).
 ## Contributing
 DocuChat is still in active development and you are very welcome to contribute to its development! To get started, fork the repo, make your changes and submit a pull request.
 
