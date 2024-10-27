@@ -1,0 +1,16 @@
+# Streamlit
+streamlit
+st-pages
+
+# OpenAI
+openai>1
+tiktoken
+
+# Document Handlers
+pypdf2
+docx2txt
+
+# Local & RAG
+langchain
+chromadb
+huggingface-hub
