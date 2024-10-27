@@ -6,3 +6,4 @@ test/
 
 __pycache__/
 llama.cpp/
+venv/

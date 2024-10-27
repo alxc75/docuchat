@@ -6,7 +6,7 @@ import math
 import json
 
 # Internal imports
-from helper import api_key, jsonmaker
+from helper import api_key, jsonmaker,endpoint
 
 
 
@@ -49,14 +49,6 @@ with open("userinfo.json", "r") as f:
         # st.write(userinfo)
         st.stop()
 
-# Create the navigation bar
-entry = st.Page("main.py", "Summary", ":house:"),
-chat = st.Page("pages/1_Chat.py", "Chat", ":speech_balloon:"),
-settings = st.Page("pages/2_Settings.py", "Settings", ":gear:"),
-faq = st.Page("pages/3_FAQ.py", "Help & FAQ", ":question:"),
-local = st.Page("pages/99_Local_Mode.py", "Local Mode", "💻")
-
-pg = st.navigation([entry, chat, settings, faq, local])
 
 # Maximum number of tokens to generate
 gen_max_tokens = 500
