@@ -4,6 +4,8 @@ DocuChat is a locally-hosted application to summarize and chat with your documen
 
 ![Python Version](https://img.shields.io/badge/Python-3.11-blue?logo=python)
 
+## **NOTE: a deep rework of docuchat is on the way with free cloud-based models and smarter document management**
+
 ## Features
 
 - **Intuitive, no-code UI**: enter your OpenAI API key in the Settings and you're ready to go.
