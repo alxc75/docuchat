@@ -4,13 +4,16 @@ import tiktoken
 from openai import OpenAI, OpenAIError
 import math
 import json
+from datetime import datetime
 
 # Internal imports
-from helper import api_key, jsonmaker,endpoint
-
-
+from helper import api_key, jsonmaker, endpoint
+from helper_chroma import ChromaDocStore
 
 st.set_page_config(page_title="DocuChat", page_icon=":speech_balloon:", layout="wide")
+
+# Initialize ChromaDocStore
+doc_store = ChromaDocStore()
 
 # Initialize the session key for the text. See the end of parse_document() for writing.
 if "text" not in st.session_state:
@@ -22,6 +25,35 @@ def main():
     st.sidebar.markdown("""
     Use this tab to get a quick summary of your uploaded document.\n
     """)
+
+    # Initialize collection selector state
+    if "selected_collection" not in st.session_state:
+        st.session_state.selected_collection = None
+
+    # Get available collections
+    collections = doc_store.list_collections()
+
+    if collections:
+        # Add collection selector
+        st.sidebar.markdown("### Available Collections")
+        selected = st.sidebar.selectbox(
+            "Select a collection to load",
+            ["None"] + collections,
+            index=0,
+            key="collection_selector",
+            help="Switch between previously uploaded documents"
+        )
+
+        # Handle collection selection
+        if selected != "None" and selected != st.session_state.selected_collection:
+            st.session_state.selected_collection = selected
+            st.sidebar.success(f"Loaded collection: {selected}")
+            # Clear the file uploader state
+            st.session_state["chat_upload"] = None
+            # Force a rerun to update the UI
+            st.rerun()
+    else:
+        st.sidebar.info("No collections available. Upload a document to create one.")
 
     # Top level greeting
     title, modeToggle = st.columns(2)
@@ -86,7 +118,7 @@ def parse_document(uploaded_file):
         if tokens == 0:
             model = None
         elif tokens <= 16385 - gen_max_tokens:
-            model = "gpt-3.5-turbo-1106"
+            model = "gpt-4o-mini"
         else:
             divider = math.ceil(tokens / 16385)
             st.error(f"Your document is too long! You need to choose a smaller document or divide yours in {divider} parts.")
@@ -101,11 +133,51 @@ def parse_document(uploaded_file):
         # Save the text to the session state
         st.session_state["text"] = text
 
+        # Store document in Chroma
+        if text.strip():
+            metadata = {
+                "filename": name,
+                "upload_date": datetime.utcnow().isoformat(),
+                "token_count": tokens,
+                "model": model
+            }
+            # Use sanitized filename as collection name and document ID
+            doc_store.add_document(
+                collection_name=name,  # Will be sanitized inside ChromaDocStore
+                text=text,
+                metadata=metadata,
+                doc_id=name  # Will be sanitized when generating chunk IDs
+            )
+
         return text, tokens, model
 
 
-# Use the function to parse the uploaded file
-text, tokens, model = parse_document(uploaded_file)
+# Load document either from uploaded file or selected collection
+text = ''
+tokens = 0
+model = None
+
+if uploaded_file:
+    # Use the function to parse the uploaded file
+    text, tokens, model = parse_document(uploaded_file)
+elif st.session_state.selected_collection:
+    try:
+        # Query the entire document from the selected collection
+        results = doc_store.query_documents(
+            collection_name=st.session_state.selected_collection,
+            query="",  # Empty query to get all chunks
+            n_results=10  # Get a reasonable number of chunks
+        )
+        if results and results["documents"]:
+            text = "\n\n".join(results["documents"][0])
+            # Get metadata from first chunk
+            metadata = results["metadatas"][0][0]
+            tokens = metadata.get("token_count", 0)
+            model = metadata.get("model", "gpt-4o-mini")
+    except Exception as e:
+        st.error(f"Error loading collection: {e}")
+        st.session_state.selected_collection = None
+
 with open("userinfo.json", "r") as f:
     userinfo = json.load(f)
     if userinfo["install_flag"] == 1:
@@ -125,6 +197,26 @@ def generate_completion(text):
         return ""
 
     try:
+        # Get relevant chunks from Chroma if available
+        collection_name = None
+        if uploaded_file:
+            collection_name = uploaded_file.name
+        elif st.session_state.selected_collection:
+            collection_name = st.session_state.selected_collection
+
+        if collection_name:
+            try:
+                results = doc_store.query_documents(
+                    collection_name=collection_name,  # Will be sanitized in query_documents
+                    query="Summarize the main points of this document",
+                    n_results=5  # Get top 5 most relevant chunks
+                )
+                # Use retrieved chunks instead of full text if available
+                if results and results["documents"]:
+                    text = "\n\n".join(results["documents"][0])  # Join top chunks
+            except Exception as e:
+                st.error(f"Error querying collection: {e}")
+
         response = client.chat.completions.create(
             model=model,
             temperature=0.3,
@@ -169,10 +261,13 @@ def regenerate_summary():
 
 def clear_summary():
     st.session_state.saved_text = ''
+    st.session_state.selected_collection = None  # Clear selected collection
+    st.session_state.collection_selector = "None"  # Reset dropdown to None
     # st.session_state.text = ''    # Not removing the parsed text for now since it is used by the Chat tab.
     # st.cache_data.clear()         # No observable effect
     output_wrapper.empty()
     st.toast("Summary cleared!", icon="🔥")
+    st.rerun()  # Rerun to update UI
 
 
 # regen, clear = st.columns(2)

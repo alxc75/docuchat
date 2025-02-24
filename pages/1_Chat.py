@@ -1,8 +1,9 @@
 import streamlit as st
 from openai import OpenAI
 from helper import api_key
-from main import parse_document
+from main import parse_document, doc_store
 import json
+from datetime import datetime
 
 
 # Initialize the session key for the text. See the end of parse_document() for writing.
@@ -17,12 +18,38 @@ def main():
     st.sidebar.title("Chat Mode")
     st.sidebar.markdown("""
     Use this tab to get answers about your document.\n
-    TODO:
-    - [ ] Fix "Clear All" button. Cache is not cleared.
     """)
 
-    # Top level greeting
+    # Initialize collection selector state if not already done in main.py
+    if "selected_collection" not in st.session_state:
+        st.session_state.selected_collection = None
 
+    # Get available collections
+    collections = doc_store.list_collections()
+
+    if collections:
+        # Add collection selector
+        st.sidebar.markdown("### Available Collections")
+        selected = st.sidebar.selectbox(
+            "Select a collection to load",
+            ["None"] + collections,
+            index=0,
+            key="collection_selector",
+            help="Switch between previously uploaded documents"
+        )
+
+        # Handle collection selection
+        if selected != "None" and selected != st.session_state.selected_collection:
+            st.session_state.selected_collection = selected
+            st.sidebar.success(f"Loaded collection: {selected}")
+            # Clear the file uploader state
+            st.session_state["chat_upload"] = None
+            # Force a rerun to update the UI
+            st.rerun()
+    else:
+        st.sidebar.info("No collections available. Upload a document to create one.")
+
+    # Top level greeting
     st.title("Chat Mode")
     st.markdown("Get answers to your questions about your document.")
     st.header(' ') # Add some space
@@ -55,10 +82,6 @@ with open("userinfo.json", "r") as f:
 
 # Create the OpenAI request
 client = OpenAI(api_key=api_key, base_url=endpoint)
-sys_prompt = ("You are an assistant designed to give summaries of uploaded documents. Your answers should be decently long, "
-              "in the form of bullet points. Make sure to include every point discussed in the document. Being verbose is "
-              "highly preferable compared to missing ideas in the document. Here is the document to recap:")
-
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -81,17 +104,46 @@ if prompt := st.chat_input("What is your question?"):
 # Initialize the full response variable
 full_response = ""
 
-# Load the document into the chat history
-full_doc_prompt = (f"The document you need to answer questions about is:\n{text}\n\n"
-                   f"Acknowledge the reception of the document and wait for user input to do anything.")
+# Get relevant document chunks based on the user's question
+def get_relevant_chunks(question: str, collection_name: str) -> str:
+    try:
+        results = doc_store.query_documents(
+            collection_name=collection_name,  # Will be sanitized in ChromaDocStore
+            query=question,
+            n_results=3  # Get top 3 most relevant chunks
+        )
+        if results and results["documents"]:
+            return "\n\n".join(results["documents"][0])  # Join top chunks
+        return None
+    except Exception as e:
+        print(f"Error retrieving chunks: {e}")
+        return None
 
 # Send the request to OpenAI
 if st.session_state.messages:  # Check if 'messages' is not empty
     messages_to_send = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
 
-    # If there is text (document), prepend the full_doc_prompt for context without showing it in the UI
-    if len(text) > 0:
-        messages_to_send.insert(0, {"role": "system", "content": full_doc_prompt})
+    # Get relevant chunks either from uploaded file or selected collection
+    collection_name = None
+    if uploaded_file:
+        collection_name = uploaded_file.name
+    elif st.session_state.selected_collection:
+        collection_name = st.session_state.selected_collection
+
+    if collection_name:
+        relevant_chunks = get_relevant_chunks(prompt, collection_name)
+        if relevant_chunks:
+            context_prompt = (f"Here are the most relevant parts of the document for answering the question:\n\n{relevant_chunks}\n\n"
+                            f"Please use this context to answer the question. If the context doesn't contain enough information, "
+                            f"you can also refer to other parts of the document that you remember.")
+        else:
+            context_prompt = f"Here is the full document:\n\n{text}\n\nPlease answer the question based on this document."
+    else:
+        st.error("Please upload a document or select a collection first.")
+        st.stop()
+
+        # Insert context as system message
+        messages_to_send.insert(0, {"role": "system", "content": context_prompt})
 
     # Create a chat message container for the assistant response
     with st.chat_message("assistant"):
@@ -110,16 +162,19 @@ if st.session_state.messages:  # Check if 'messages' is not empty
     st.session_state.messages.append({"role": "assistant", "content": full_response})
 
 
-
 # Add a button to clear the chat history
 def clear_chat_history():
     st.session_state.messages = []
+    st.rerun()
 
 def clear_all():
     st.session_state.messages = []
     st.session_state["text"] = ""
-    del st.session_state["text"]
-    st.stop()
+    st.session_state.selected_collection = None
+    st.session_state.collection_selector = "None"
+    if "text" in st.session_state:
+        del st.session_state["text"]
+    st.rerun()
 
 if len(st.session_state.messages) > 0:
     st.sidebar.button('Clear Chat History', on_click=clear_chat_history)

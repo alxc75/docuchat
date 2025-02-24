@@ -14,3 +14,4 @@ docx2txt
 langchain
 chromadb
 huggingface-hub
+sentence-transformers  # For embedding generation
