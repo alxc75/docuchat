@@ -169,7 +169,8 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # Accept user input
-if prompt := st.chat_input("What is your question?"):
+prompt = st.chat_input("What is your question?")
+if prompt and prompt.strip():  # Check if prompt exists and is not just whitespace
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
     # Display user message in chat message container
@@ -195,7 +196,10 @@ def get_relevant_chunks(question: str, collection_name: str) -> str:
         return None
 
 # Send the request to OpenAI
-if st.session_state.messages:  # Check if 'messages' is not empty
+# Only proceed if we have messages and the last message has non-empty content
+if (st.session_state.messages and
+    st.session_state.messages[-1]["role"] == "user" and
+    st.session_state.messages[-1]["content"].strip()):
     # Get relevant chunks from the active collection
     collection_name = st.session_state.selected_collection
 
@@ -282,3 +286,4 @@ st.sidebar.button('Clear All', on_click=clear_all)
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see https://www.gnu.org/licenses/.
+
