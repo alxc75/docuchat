@@ -40,12 +40,12 @@ if new_api_key != api_key and new_api_key.strip() != "":
 # Toggle local mode
 with open("userinfo.json", "r") as f:
     userinfo = json.load(f)
-if "install_flag" in userinfo:
-    install_flag = userinfo["install_flag"]
+if "ollama_flag" in userinfo:
+    ollama_flag = userinfo["ollama_flag"]
 else:
-    install_flag = 0    # Because if the key doesn't exist, it's logically not installed. Shouldn't be invoked normally anyway.
+    ollama_flag = 0    # Because if the key doesn't exist, it's logically not installed. Shouldn't be invoked normally anyway.
 
-if install_flag == 1:
+if ollama_flag == 1:
     local_mode = st.empty()
     if userinfo.get("endpoint") == "http://localhost:8080/v1":  # Using the get() method to avoid a KeyError if endpoint doesn't exist
         local_mode = st.toggle("Local Mode", value=True, key="local_mode", help="Toggle local mode and run models locally for "
@@ -74,7 +74,7 @@ else:
 
 # ------------------- LICENSE -------------------
 # Docuchat, a smart knowledge assistant for your documents.
-# Copyright © 2024 xTellarin
+# Copyright © 2025 alxc75
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

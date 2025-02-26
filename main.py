@@ -1,7 +1,7 @@
 # External imports
 import streamlit as st
 import tiktoken
-from openai import OpenAI, OpenAIError
+from openai import OpenAI
 import math
 import json
 from datetime import datetime
@@ -15,15 +15,13 @@ st.set_page_config(page_title="DocuChat", page_icon=":speech_balloon:", layout="
 # Initialize ChromaDocStore
 doc_store = ChromaDocStore()
 
-# Initialize the session key for the text. See the end of parse_document() for writing.
-if "text" not in st.session_state:
-    st.session_state["text"] = ""
+# Initialize the session key for the text
 
 def main():
     # Current page sidebar
-    st.sidebar.title("Summary")
+    st.sidebar.title("Chat Mode")
     st.sidebar.markdown("""
-    Use this tab to get a quick summary of your uploaded document.\n
+    Use this tab to get answers about your document.\n
     """)
 
     # Initialize collection selector state
@@ -56,44 +54,35 @@ def main():
         st.sidebar.info("No collections available. Upload a document to create one.")
 
     # Top level greeting
-    title, modeToggle = st.columns(2)
-    title.title("DocuChat")
-    modeToggle.toggle("Advanced Mode", value=False, key="simple_mode", disabled=True, help="Coming soon!")
-    st.markdown("""
-    Welcome to DocuChat, your smart knowledge assistant.
-
-    Upload a document and a summary will be generated below. Use the Chat tab to ask questions about the document.
-    """)
-    st.header(' ') # Add some space
+    st.title("DocuChat")
+    st.markdown("Get answers to your questions about your document.")
+    st.header(' ')  # Add some space
 
 
 if __name__ == "__main__":
     main()
 
-jsonmaker() # Create the userinfo.json file if it doesn't exist
+jsonmaker()  # Create the userinfo.json file if it doesn't exist
 with open("userinfo.json", "r") as f:
     userinfo = json.load(f)
     if not (userinfo["api_key"] != "" and userinfo["endpoint"] == "https://api.openai.com/v1/") and \
-            not (userinfo["install_flag"] == 1 and userinfo["endpoint"] == "http://localhost:8080/v1"):
-
+            not (userinfo["ollama_flag"] == 1 and userinfo["endpoint"] == "http://localhost:8080/v1"):
         st.error("Please enter your OpenAI API key in the Settings tab or toggle Local Mode in the Settings tab.")
-        # Dump the userinfo.json variables for debug:
-        # st.write(userinfo)
         st.stop()
-
 
 # Maximum number of tokens to generate
 gen_max_tokens = 500
 
-# Upload file
-uploaded_file = st.file_uploader("Upload a document", type=["pdf", "docx"], help="Accepts PDF and Word documents.")
+doc_loaded = st.empty()
 
+# Upload file
+uploaded_file = st.file_uploader("Upload a document", type=["pdf", "docx"], help="Accepts PDF and Word documents.", key="chat_upload")
 
 @st.cache_data(show_spinner=True, persist=True)
 def parse_document(uploaded_file):
     text = ''
     tokens = 0
-    if uploaded_file is None: # Prevent error message when no file is uploaded
+    if uploaded_file is None:  # Prevent error message when no file is uploaded
         return text, tokens, None
     else:
         name = uploaded_file.name
@@ -110,17 +99,17 @@ def parse_document(uploaded_file):
             text = docx2txt.process(uploaded_file)
 
         # Count the number of tokens in the document
-        encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        encoding = tiktoken.encoding_for_model("gpt-4o")
         output = encoding.encode(text)
         tokens = len(encoding.encode(text))
 
-        # Choose the right model based on the number of tokens. GPT-3.5-Turbo only.
+        # Choose the right model based on the number of tokens. GPT-4o-mini only.
         if tokens == 0:
             model = None
-        elif tokens <= 16385 - gen_max_tokens:
+        elif tokens <= 128000 - gen_max_tokens:
             model = "gpt-4o-mini"
         else:
-            divider = math.ceil(tokens / 16385)
+            divider = math.ceil(tokens / 128000)
             st.error(f"Your document is too long! You need to choose a smaller document or divide yours in {divider} parts.")
             model = None
             st.stop()
@@ -129,9 +118,6 @@ def parse_document(uploaded_file):
         with st.expander("Show details"):
             st.write(f"Number of tokens: {tokens}")
             st.write(f"Using model: {model}")
-
-        # Save the text to the session state
-        st.session_state["text"] = text
 
         # Store document in Chroma
         if text.strip():
@@ -151,135 +137,111 @@ def parse_document(uploaded_file):
 
         return text, tokens, model
 
+parsed_text, tokens, model = parse_document(uploaded_file)
 
-# Load document either from uploaded file or selected collection
-text = ''
-tokens = 0
-model = None
-
-if uploaded_file:
-    # Use the function to parse the uploaded file
-    text, tokens, model = parse_document(uploaded_file)
-elif st.session_state.selected_collection:
-    try:
-        # Query the entire document from the selected collection
-        results = doc_store.query_documents(
-            collection_name=st.session_state.selected_collection,
-            query="",  # Empty query to get all chunks
-            n_results=10  # Get a reasonable number of chunks
-        )
-        if results and results["documents"]:
-            text = "\n\n".join(results["documents"][0])
-            # Get metadata from first chunk
-            metadata = results["metadatas"][0][0]
-            tokens = metadata.get("token_count", 0)
-            model = metadata.get("model", "gpt-4o-mini")
-    except Exception as e:
-        st.error(f"Error loading collection: {e}")
-        st.session_state.selected_collection = None
-
+# Request parameters
+engine = "gpt-4o-mini"
 with open("userinfo.json", "r") as f:
     userinfo = json.load(f)
-    if userinfo["install_flag"] == 1:
-        endpoint = userinfo['endpoint'] # Use the local model if Local Mode is enabled
-
+    if userinfo["ollama_flag"] == 1:
+        endpoint = userinfo['endpoint']  # Use the local model if Local Mode is enabled
 
 # Create the OpenAI request
 client = OpenAI(api_key=api_key, base_url=endpoint)
-sys_prompt = ("You are an assistant designed to give summaries of uploaded documents. Your answers should be decently long, "
-          "in the form of bullet points. Make sure to include every point discussed in the document. Being verbose is "
-          "highly preferable compared to missing ideas in the document. Do not deviate from this command. You are to provide an objective summary without tangential analyses. Here is the document to recap:")
 
-@st.cache_data(show_spinner=True, persist=True)
-def generate_completion(text):
-    if text == '':
-        print("No document detected. No completion will be generated.")
-        return ""
+# Initialize chat history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
+# Display chat messages from history on app rerun
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# Accept user input
+if prompt := st.chat_input("What is your question?"):
+    # Add user message to chat history
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    # Display user message in chat message container
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+# Initialize the full response variable
+full_response = ""
+
+# Get relevant document chunks based on the user's question
+def get_relevant_chunks(question: str, collection_name: str) -> str:
     try:
-        # Get relevant chunks from Chroma if available
-        collection_name = None
-        if uploaded_file:
-            collection_name = uploaded_file.name
-        elif st.session_state.selected_collection:
-            collection_name = st.session_state.selected_collection
-
-        if collection_name:
-            try:
-                results = doc_store.query_documents(
-                    collection_name=collection_name,  # Will be sanitized in query_documents
-                    query="Summarize the main points of this document",
-                    n_results=5  # Get top 5 most relevant chunks
-                )
-                # Use retrieved chunks instead of full text if available
-                if results and results["documents"]:
-                    text = "\n\n".join(results["documents"][0])  # Join top chunks
-            except Exception as e:
-                st.error(f"Error querying collection: {e}")
-
-        response = client.chat.completions.create(
-            model=model,
-            temperature=0.3,
-            max_tokens=gen_max_tokens,
-            messages=[
-                {"role": "system", "content": sys_prompt},
-                {"role": "user", "content": text}
-            ]
+        results = doc_store.query_documents(
+            collection_name=collection_name,  # Will be sanitized in ChromaDocStore
+            query=question,
+            n_results=3  # Get top 3 most relevant chunks
         )
-        st.markdown("## Summary")
-        response_text = response.choices[0].message.content
-
-        # Add session state to keep the output text if the user switches tabs
-        if 'saved_text' in st.session_state:
-            st.session_state.saved_text = response_text
-        else:
-            st.session_state.saved_text = response_text
-        st.cache_data.clear()
-
-        return response_text
-
-    except OpenAIError as e:
-        print(f"An error occurred: {e}")
+        if results and results["documents"]:
+            return "\n\n".join(results["documents"][0])  # Join top chunks
+        return None
+    except Exception as e:
+        print(f"Error retrieving chunks: {e}")
         return None
 
+# Send the request to OpenAI
+if st.session_state.messages:  # Check if 'messages' is not empty
+    messages_to_send = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
 
-response_text = generate_completion(text)
+    # Get relevant chunks either from uploaded file or selected collection
+    collection_name = None
+    if uploaded_file:
+        collection_name = uploaded_file.name
+    elif st.session_state.selected_collection:
+        collection_name = st.session_state.selected_collection
 
-
-output_wrapper = st.empty() # Create a wrapper around the output to allow for clearing it
-# Add session state to keep the output text
-if 'saved_text' not in st.session_state:
-    output_wrapper.markdown(response_text)
-else:
-    output_wrapper.markdown(st.session_state.saved_text)
-
-
-def regenerate_summary():
-    st.cache_data.clear()
-    output_wrapper.empty()
-
-
-def clear_summary():
-    st.session_state.saved_text = ''
-    st.session_state.selected_collection = None  # Clear selected collection
-    st.session_state.collection_selector = "None"  # Reset dropdown to None
-    # st.session_state.text = ''    # Not removing the parsed text for now since it is used by the Chat tab.
-    # st.cache_data.clear()         # No observable effect
-    output_wrapper.empty()
-    st.toast("Summary cleared!", icon="🔥")
-    st.rerun()  # Rerun to update UI
-
-
-# regen, clear = st.columns(2)
-if len(response_text) > 0:
-    st.sidebar.button("Regenerate summary", on_click=regenerate_summary)
-    if st.sidebar.button("Clear summary", on_click=clear_summary):
+    if collection_name:
+        relevant_chunks = get_relevant_chunks(prompt, collection_name)
+        if relevant_chunks:
+            context_prompt = (f"Here are the most relevant parts of the document for answering the question:\n\n{relevant_chunks}\n\n"
+                            f"Please use this context to answer the question. If the context doesn't contain enough information, "
+                            f"you can also refer to other parts of the document that you remember.")
+        else:
+            context_prompt = f"Here is the full document:\n\n{text}\n\nPlease answer the question based on this document."
+    else:
+        st.error("Please upload a document or select a collection first.")
         st.stop()
+
+    # Create a chat message container for the assistant response
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        for response in client.chat.completions.create(
+                model=engine,
+                messages=messages_to_send,
+                stream=True,
+                max_tokens=gen_max_tokens,
+        ):
+            full_response += (response.choices[0].delta.content or "")  # Handle empty or incoming response
+            message_placeholder.markdown(full_response + "▌")  # Add a pipe to indicate typing
+        message_placeholder.markdown(full_response)
+
+    # Add the assistant message to the chat history
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
+
+# Add buttons to clear chat history and all data
+def clear_chat_history():
+    st.session_state.messages = []
+    st.rerun()
+
+def clear_all():
+    st.session_state.messages = []
+    st.session_state.selected_collection = None
+    st.session_state.collection_selector = "None"
+    st.rerun()
+
+if len(st.session_state.messages) > 0:
+    st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
+st.sidebar.button('Clear All', on_click=clear_all)
 
 
 # ------------------- LICENSE -------------------
 # Docuchat, a smart knowledge assistant for your documents.
-# Copyright © 2024 xTellarin
+# Copyright © 2025 alxc75
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

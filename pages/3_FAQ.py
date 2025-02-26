@@ -10,7 +10,7 @@ st.markdown("---") # Divider
 
 st.markdown("""
 ## What is DocuChat?
-DocuChat is a locally-hosted application to summarize and chat with your documents. Use the OpenAI API or run models 
+DocuChat is a locally-hosted application to summarize and chat with your documents. Use the OpenAI API or run models
 locally for 100% free usage. You can even query multiple documents thanks to state-of-the-art RAG integrations (coming soon!).
 """)
 
@@ -20,7 +20,7 @@ To get started, enter your OpenAI API key in the Settings tab. If you don't have
 Your key is safe and will never leave your device. Neither I nor OpenAI have access to it.
 Alternatively, head to the Local Mode tab in the sidebar to install the required tools and toggle Local Mode in the Settings.\n
 Then, upload a document in the Summary tab to get a one-click summary. Alternatively you can use the Chat tab to ask questions about your document.\n
-*Did you know? A document uploaded in the Summary tab is automatically shared to the Chat tab and vice-versa. Upload a new document to start over.* 
+*Did you know? A document uploaded in the Summary tab is automatically shared to the Chat tab and vice-versa. Upload a new document to start over.*
 """)
 
 st.markdown("""
@@ -64,7 +64,7 @@ GNU General Public License for more details.
 
 # ------------------- LICENSE -------------------
 # Docuchat, a smart knowledge assistant for your documents.
-# Copyright © 2024 xTellarin
+# Copyright © 2025 alxc75
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
