@@ -7,7 +7,7 @@ import json
 from datetime import datetime
 
 # Internal imports
-from helper import api_key, jsonmaker, endpoint
+from helper import api_key, secretmaker, endpoint
 from helper_chroma import ChromaDocStore
 
 st.set_page_config(page_title="DocuChat", page_icon=":speech_balloon:", layout="wide")
@@ -24,6 +24,23 @@ def main():
     Use this tab to get answers about your document.\n
     """)
 
+    # Add file uploader to sidebar
+    uploaded_file = st.sidebar.file_uploader(
+        "Upload a document",
+        type=["pdf", "docx"],
+        help="Accepts PDF and Word documents.",
+        key="chat_upload"
+    )
+
+    # Process uploaded file if present
+    if uploaded_file:
+        with st.sidebar.status("Processing document..."):
+            parsed_text, tokens, model = parse_document(uploaded_file)
+            if model:  # Document was processed successfully
+                st.sidebar.success(f"Document '{uploaded_file.name}' processed and stored")
+                # Set this as the active collection
+                st.session_state.selected_collection = uploaded_file.name
+
     # Initialize collection selector state
     if "selected_collection" not in st.session_state:
         st.session_state.selected_collection = None
@@ -32,7 +49,7 @@ def main():
     collections = doc_store.list_collections()
 
     if collections:
-        # Add collection selector
+        # Add collection selector below file uploader
         st.sidebar.markdown("### Available Collections")
         selected = st.sidebar.selectbox(
             "Select a collection to load",
@@ -46,9 +63,6 @@ def main():
         if selected != "None" and selected != st.session_state.selected_collection:
             st.session_state.selected_collection = selected
             st.sidebar.success(f"Loaded collection: {selected}")
-            # Clear the file uploader state
-            st.session_state["chat_upload"] = None
-            # Force a rerun to update the UI
             st.rerun()
     else:
         st.sidebar.info("No collections available. Upload a document to create one.")
@@ -62,21 +76,17 @@ def main():
 if __name__ == "__main__":
     main()
 
-jsonmaker()  # Create the userinfo.json file if it doesn't exist
-with open("userinfo.json", "r") as f:
-    userinfo = json.load(f)
-    if not (userinfo["api_key"] != "" and userinfo["endpoint"] == "https://api.openai.com/v1/") and \
-            not (userinfo["ollama_flag"] == 1 and userinfo["endpoint"] == "http://localhost:8080/v1"):
-        st.error("Please enter your OpenAI API key in the Settings tab or toggle Local Mode in the Settings tab.")
-        st.stop()
+secretmaker()  # Create the st.secrets.json file if it doesn't exist
+if not (st.secrets.api_keys.openai != "" and st.secrets.endpoints.openai == "https://api.openai.com/v1/") and \
+        not (st.secrets.settings.ollama_flag == 1 and st.secrets.endpoints.ollama == "http://localhost:8080/v1"):
+    st.error("Please enter your OpenAI API key in the Settings tab or toggle Local Mode in the Settings tab.")
+    st.stop()
 
 # Maximum number of tokens to generate
 gen_max_tokens = 500
 
 doc_loaded = st.empty()
 
-# Upload file
-uploaded_file = st.file_uploader("Upload a document", type=["pdf", "docx"], help="Accepts PDF and Word documents.", key="chat_upload")
 
 @st.cache_data(show_spinner=True, persist=True)
 def parse_document(uploaded_file):
@@ -137,14 +147,10 @@ def parse_document(uploaded_file):
 
         return text, tokens, model
 
-parsed_text, tokens, model = parse_document(uploaded_file)
 
 # Request parameters
 engine = "gpt-4o-mini"
-with open("userinfo.json", "r") as f:
-    userinfo = json.load(f)
-    if userinfo["ollama_flag"] == 1:
-        endpoint = userinfo['endpoint']  # Use the local model if Local Mode is enabled
+endpoint = st.secrets.endpoints.openai if st.secrets.settings.ollama_flag == 0 else st.secrets.endpoints.ollama
 
 # Create the OpenAI request
 client = OpenAI(api_key=api_key, base_url=endpoint)
@@ -186,14 +192,8 @@ def get_relevant_chunks(question: str, collection_name: str) -> str:
 
 # Send the request to OpenAI
 if st.session_state.messages:  # Check if 'messages' is not empty
-    messages_to_send = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
-
-    # Get relevant chunks either from uploaded file or selected collection
-    collection_name = None
-    if uploaded_file:
-        collection_name = uploaded_file.name
-    elif st.session_state.selected_collection:
-        collection_name = st.session_state.selected_collection
+    # Get relevant chunks from the active collection
+    collection_name = st.session_state.selected_collection
 
     if collection_name:
         relevant_chunks = get_relevant_chunks(prompt, collection_name)
@@ -202,9 +202,15 @@ if st.session_state.messages:  # Check if 'messages' is not empty
                             f"Please use this context to answer the question. If the context doesn't contain enough information, "
                             f"you can also refer to other parts of the document that you remember.")
         else:
-            context_prompt = f"Here is the full document:\n\n{text}\n\nPlease answer the question based on this document."
+            st.warning("Could not find relevant chunks. The answer might be less accurate.")
+            context_prompt = "Please answer the question based on your knowledge of the document."
+
+        # Create messages array with context as system message
+        messages_to_send = [
+            {"role": "system", "content": context_prompt}
+        ] + [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
     else:
-        st.error("Please upload a document or select a collection first.")
+        st.error("Please select a collection first.")
         st.stop()
 
     # Create a chat message container for the assistant response
