@@ -1,8 +1,9 @@
 import streamlit as st
-import json
-import os
+import requests
 from helper import api_key
 import toml
+import ollama
+import re
 
 st.sidebar.title("Settings")
 st.sidebar.markdown("Use this tab to change your OpenAI API key.")
@@ -56,6 +57,47 @@ local_mode = st.toggle(
     args=(1 if not ollama_flag else 0,),
     help="Toggle local mode and run models locally for 100% free usage. No OpenAI API key required. See the FAQ for more information."
 )
+
+
+if local_mode:
+# Test the Ollama endpoint
+    try:
+        response = requests.get("http://localhost:11434")
+        if response.status_code == 200:
+            st.success("Ollama is running")
+            ollama_running = True
+        else:
+            st.error("Ollama is not running!")
+            ollama_running = False
+
+    except requests.exceptions.ConnectionError:
+        st.error("Ollama is not running!")
+        ollama_running = False
+
+    if ollama_running:
+        # Select model
+        models = []
+        for model in ollama.list()["models"]:
+            models.append(model["model"])
+        if not models:
+            st.error("No models found!")
+            with st.spinner("Downloading model, please wait..."):
+                ollama.pull("llama3.2:1b")
+                while True:
+                    for model in ollama.list()["models"]:
+                        models.append(model["model"])
+                    if models:
+                        st.rerun()
+                        break
+
+        default_model = st.selectbox("Model", models)
+        # Save selected model to default
+        secrets["settings"]["default_model"] = default_model
+        with open(secrets_path, "w") as f:
+            toml.dump(secrets, f)
+
+
+
 
 
 # ------------------- LICENSE -------------------

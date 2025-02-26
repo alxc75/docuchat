@@ -3,7 +3,7 @@ import streamlit as st
 import tiktoken
 from openai import OpenAI
 import math
-import json
+import ollama
 from datetime import datetime
 
 # Internal imports
@@ -148,12 +148,16 @@ def parse_document(uploaded_file):
         return text, tokens, model
 
 
+# Create the engine
+if st.secrets.settings.ollama_flag == 0:
+    engine = OpenAI(api_key=api_key, base_url=endpoint)
+    rag_model = "gpt-4o-mini"
+else:
+    engine = ollama.chat
+    rag_model = st.secrets.settings.default_model
 # Request parameters
-engine = "gpt-4o-mini"
+rag_model = "gpt-4o-mini" if st.secrets.settings.ollama_flag == 0 else "llama3.2"
 endpoint = st.secrets.endpoints.openai if st.secrets.settings.ollama_flag == 0 else st.secrets.endpoints.ollama
-
-# Create the OpenAI request
-client = OpenAI(api_key=api_key, base_url=endpoint)
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -216,8 +220,8 @@ if st.session_state.messages:  # Check if 'messages' is not empty
     # Create a chat message container for the assistant response
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
-        for response in client.chat.completions.create(
-                model=engine,
+        for response in engine(
+                model=rag_model,
                 messages=messages_to_send,
                 stream=True,
                 max_tokens=gen_max_tokens,

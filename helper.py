@@ -22,7 +22,8 @@ def secretmaker():
             "ollama": "http://localhost:8080/v1"
         },
         "settings": {
-            "ollama_flag": 0
+            "ollama_flag": 0,
+            "default_model": ""
         }
     }
 

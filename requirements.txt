@@ -6,6 +6,9 @@ st-pages
 openai>1
 tiktoken
 
+# Ollama
+ollama
+
 # Document Handlers
 pypdf2
 docx2txt
