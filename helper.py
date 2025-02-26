@@ -17,11 +17,9 @@ def secretmaker():
         "api_keys": {
             "openai": "",
         },
-        "endpoints": {
-            "openai": "https://api.openai.com/v1/",
-            "ollama": "http://localhost:8080/v1"
-        },
-        "settings": {
+
+        "ollama": {
+            "endpoint": "http://localhost:11434",
             "ollama_flag": 0,
             "default_model": ""
         }
@@ -41,23 +39,17 @@ def secretmaker():
     try:
         # Get values from st.secrets with fallbacks to defaults
         api_key = st.secrets.api_keys.get("openai", default_secrets["api_keys"]["openai"])
-        endpoint = st.secrets.endpoints.get("openai", default_secrets["endpoints"]["openai"])
-        ollama_flag = st.secrets.settings.get("ollama_flag", default_secrets["settings"]["ollama_flag"])
-
-        # If using Ollama, switch endpoint
-        if ollama_flag:
-            endpoint = st.secrets.endpoints.get("ollama", default_secrets["endpoints"]["ollama"])
+        ollama_flag = st.secrets.ollama.get("ollama_flag", default_secrets["ollama"]["ollama_flag"])
 
     except Exception as e:
         st.error(f"Error loading secrets: {str(e)}")
         api_key = default_secrets["api_keys"]["openai"]
-        endpoint = default_secrets["endpoints"]["openai"]
-        ollama_flag = default_secrets["settings"]["ollama_flag"]
+        ollama_flag = default_secrets["ollama"]["ollama_flag"]
 
-    return api_key, endpoint, ollama_flag
+    return api_key, ollama_flag
 
 # Get the secrets for use in other files
-api_key, endpoint, ollama_flag = secretmaker()
+api_key, ollama_flag = secretmaker()
 
 # ------------------- LICENSE -------------------
 # Docuchat, a smart knowledge assistant for your documents.

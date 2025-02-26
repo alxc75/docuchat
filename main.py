@@ -7,7 +7,7 @@ import ollama
 from datetime import datetime
 
 # Internal imports
-from helper import api_key, secretmaker, endpoint
+from helper import api_key, secretmaker
 from helper_chroma import ChromaDocStore
 
 st.set_page_config(page_title="DocuChat", page_icon=":speech_balloon:", layout="wide")
@@ -77,8 +77,7 @@ if __name__ == "__main__":
     main()
 
 secretmaker()  # Create the st.secrets.json file if it doesn't exist
-if not (st.secrets.api_keys.openai != "" and st.secrets.endpoints.openai == "https://api.openai.com/v1/") and \
-        not (st.secrets.settings.ollama_flag == 1 and st.secrets.endpoints.ollama == "http://localhost:8080/v1"):
+if not (st.secrets.api_keys.openai != "" or st.secrets.ollama.ollama_flag == 1):
     st.error("Please enter your OpenAI API key in the Settings tab or toggle Local Mode in the Settings tab.")
     st.stop()
 
@@ -149,15 +148,16 @@ def parse_document(uploaded_file):
 
 
 # Create the engine
-if st.secrets.settings.ollama_flag == 0:
-    engine = OpenAI(api_key=api_key, base_url=endpoint)
+if st.secrets.ollama.ollama_flag == 0:
+    engine = OpenAI(api_key=api_key)
+    engine_type = "openai"
     rag_model = "gpt-4o-mini"
 else:
     engine = ollama.chat
-    rag_model = st.secrets.settings.default_model
+    engine_type = "ollama"
+    rag_model = st.secrets.ollama.default_model
 # Request parameters
-rag_model = "gpt-4o-mini" if st.secrets.settings.ollama_flag == 0 else "llama3.2"
-endpoint = st.secrets.endpoints.openai if st.secrets.settings.ollama_flag == 0 else st.secrets.endpoints.ollama
+rag_model = "gpt-4o-mini" if st.secrets.ollama.ollama_flag == 0 else st.secrets.ollama.default_model
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -220,15 +220,32 @@ if st.session_state.messages:  # Check if 'messages' is not empty
     # Create a chat message container for the assistant response
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
-        for response in engine(
-                model=rag_model,
-                messages=messages_to_send,
-                stream=True,
-                max_tokens=gen_max_tokens,
-        ):
-            full_response += (response.choices[0].delta.content or "")  # Handle empty or incoming response
-            message_placeholder.markdown(full_response + "▌")  # Add a pipe to indicate typing
-        message_placeholder.markdown(full_response)
+        full_response = ""
+
+        try:
+            for response in engine(
+                    model=rag_model,
+                    messages=messages_to_send,
+                    stream=True,
+            ):
+                if engine_type == "openai":
+                    # Handle OpenAI streaming response
+                    full_response += (response.choices[0].delta.content or "")
+                else:
+                    # Handle Ollama streaming response
+                    if 'message' in response and 'content' in response['message']:
+                        full_response += response['message']['content']
+
+                # Update the message placeholder with the accumulated response
+                message_placeholder.markdown(full_response + "▌")
+
+            # Display final response without the typing indicator
+            message_placeholder.markdown(full_response)
+
+        except Exception as e:
+            st.error(f"Error during streaming: {str(e)}")
+            full_response = "Sorry, there was an error generating the response."
+            message_placeholder.markdown(full_response)
 
     # Add the assistant message to the chat history
     st.session_state.messages.append({"role": "assistant", "content": full_response})

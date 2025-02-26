@@ -38,12 +38,12 @@ if new_api_key != api_key and new_api_key.strip() != "":
 
 
 ### Local Mode ###
-ollama_flag = secrets.get("settings", {}).get("ollama_flag", 0)
+ollama_flag = secrets.get("ollama", {}).get("ollama_flag", 0)
 
 def update_flag(value):
     # Update both the secrets dict and st.secrets
-    secrets["settings"] = secrets.get("settings", {})
-    secrets["settings"]["ollama_flag"] = value
+    secrets["ollama"] = secrets.get("ollama", {})
+    secrets["ollama"]["ollama_flag"] = value
     with open(secrets_path, "w") as f:
         toml.dump(secrets, f)
     # st.rerun()
@@ -92,7 +92,7 @@ if local_mode:
 
         default_model = st.selectbox("Model", models)
         # Save selected model to default
-        secrets["settings"]["default_model"] = default_model
+        secrets["ollama"]["default_model"] = default_model
         with open(secrets_path, "w") as f:
             toml.dump(secrets, f)
 
