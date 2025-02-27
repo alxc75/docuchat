@@ -1,80 +1,28 @@
 # External imports
 import streamlit as st
-import tiktoken
 from openai import OpenAI
-import math
 import ollama
-from datetime import datetime
 
 # Internal imports
 from helper import api_key, secretmaker
-from helper_chroma import ChromaDocStore
 
 st.set_page_config(page_title="DocuChat", page_icon=":speech_balloon:", layout="wide")
-
-# Initialize ChromaDocStore
-doc_store = ChromaDocStore()
-
-# Initialize the session key for the text
-
-def main():
-    # Current page sidebar
-    st.sidebar.title("Chat Mode")
-    st.sidebar.markdown("""
-    Use this tab to get answers about your document.\n
-    """)
-
-    # Add file uploader to sidebar
-    uploaded_file = st.sidebar.file_uploader(
-        "Upload a document",
-        type=["pdf", "docx"],
-        help="Accepts PDF and Word documents.",
-        key="chat_upload"
-    )
-
-    # Process uploaded file if present
-    if uploaded_file:
-        with st.sidebar.status("Processing document..."):
-            parsed_text, tokens, model = parse_document(uploaded_file)
-            if model:  # Document was processed successfully
-                st.sidebar.success(f"Document '{uploaded_file.name}' processed and stored")
-                # Set this as the active collection
-                st.session_state.selected_collection = uploaded_file.name
-
-    # Initialize collection selector state
-    if "selected_collection" not in st.session_state:
-        st.session_state.selected_collection = None
-
-    # Get available collections
-    collections = doc_store.list_collections()
-
-    if collections:
-        # Add collection selector below file uploader
-        st.sidebar.markdown("### Available Collections")
-        selected = st.sidebar.selectbox(
-            "Select a collection to load",
-            ["None"] + collections,
-            index=0,
-            key="collection_selector",
-            help="Switch between previously uploaded documents"
-        )
-
-        # Handle collection selection
-        if selected != "None" and selected != st.session_state.selected_collection:
-            st.session_state.selected_collection = selected
-            st.sidebar.success(f"Loaded collection: {selected}")
-            st.rerun()
-    else:
-        st.sidebar.info("No collections available. Upload a document to create one.")
-
-    # Top level greeting
-    st.title("DocuChat")
-    st.markdown("Get answers to your questions about your document.")
-    st.header(' ')  # Add some space
+# Current page sidebar
+st.sidebar.title("Chat Mode")
+st.sidebar.markdown("""
+Use this tab to get answers about your document.\n
+""")
+# Top level greeting
+st.title("DocuChat")
+st.markdown("Get answers to your questions about your document.")
+st.header(' ')  # Add some space
 
 
 if __name__ == "__main__":
-    main()
+    with st.spinner("Loading Collections..."):
+        from helper_chroma import load_chroma
+        doc_store = load_chroma()
+
 
 secretmaker()  # Create the st.secrets.json file if it doesn't exist
 if not (st.secrets.api_keys.openai != "" or st.secrets.ollama.ollama_flag == 1):
@@ -85,66 +33,6 @@ if not (st.secrets.api_keys.openai != "" or st.secrets.ollama.ollama_flag == 1):
 gen_max_tokens = 500
 
 doc_loaded = st.empty()
-
-
-@st.cache_data(show_spinner=True, persist=True)
-def parse_document(uploaded_file):
-    text = ''
-    tokens = 0
-    if uploaded_file is None:  # Prevent error message when no file is uploaded
-        return text, tokens, None
-    else:
-        name = uploaded_file.name
-        # Check the extension and load the appropriate library
-        if name.endswith(".pdf"):
-            import PyPDF2
-            pdfReader = PyPDF2.PdfReader(uploaded_file)
-            for page in range(len(pdfReader.pages)):
-                page_obj = pdfReader.pages[page]
-                text += page_obj.extract_text()
-
-        elif name.endswith(".docx"):
-            import docx2txt
-            text = docx2txt.process(uploaded_file)
-
-        # Count the number of tokens in the document
-        encoding = tiktoken.encoding_for_model("gpt-4o")
-        output = encoding.encode(text)
-        tokens = len(encoding.encode(text))
-
-        # Choose the right model based on the number of tokens. GPT-4o-mini only.
-        if tokens == 0:
-            model = None
-        elif tokens <= 128000 - gen_max_tokens:
-            model = "gpt-4o-mini"
-        else:
-            divider = math.ceil(tokens / 128000)
-            st.error(f"Your document is too long! You need to choose a smaller document or divide yours in {divider} parts.")
-            model = None
-            st.stop()
-
-        # Display the token count and model used inside a collapsible container
-        with st.expander("Show details"):
-            st.write(f"Number of tokens: {tokens}")
-            st.write(f"Using model: {model}")
-
-        # Store document in Chroma
-        if text.strip():
-            metadata = {
-                "filename": name,
-                "upload_date": datetime.utcnow().isoformat(),
-                "token_count": tokens,
-                "model": model
-            }
-            # Use sanitized filename as collection name and document ID
-            doc_store.add_document(
-                collection_name=name,  # Will be sanitized inside ChromaDocStore
-                text=text,
-                metadata=metadata,
-                doc_id=name  # Will be sanitized when generating chunk IDs
-            )
-
-        return text, tokens, model
 
 
 # Create the engine

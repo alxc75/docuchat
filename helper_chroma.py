@@ -2,6 +2,7 @@ import os
 import re
 from datetime import datetime
 from typing import List, Dict, Optional
+import streamlit as st
 
 import chromadb
 from chromadb.config import Settings
@@ -184,3 +185,34 @@ class ChromaDocStore:
         """
         name = self._sanitize_collection_name(name)
         self.client.delete_collection(name=name)
+
+def load_chroma():
+    from helper_chroma import ChromaDocStore
+    # Initialize collection selector state
+    if "selected_collection" not in st.session_state:
+        st.session_state.selected_collection = None
+
+    # Get available collections
+    doc_store = ChromaDocStore()
+    collections = doc_store.list_collections()
+
+    if collections:
+        # Add collection selector below file uploader
+        st.sidebar.markdown("### Available Collections")
+        selected = st.sidebar.selectbox(
+            "Select a collection to load",
+            ["None"] + collections,
+            index=0,
+            key="collection_selector",
+            help="Switch between previously uploaded documents"
+        )
+
+        # Handle collection selection
+        if selected != "None" and selected != st.session_state.selected_collection:
+            st.session_state.selected_collection = selected
+            st.sidebar.success(f"Loaded collection: {selected}")
+            st.rerun()
+    else:
+        st.sidebar.info("No collections available. Upload a document in the Collections tab to create one.")
+
+    return doc_store
