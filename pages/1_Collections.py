@@ -21,8 +21,11 @@ if "show_rename_dialog" not in st.session_state:
     st.session_state.show_rename_dialog = False
 if "show_delete_dialog" not in st.session_state:
     st.session_state.show_delete_dialog = False
+if "manual_collection_selection" not in st.session_state:
+    st.session_state.manual_collection_selection = False
 
-@st.cache_data(show_spinner=True, persist=True)
+# Removed caching for this function as it causes issues with multiple file uploads
+# @st.cache_data(show_spinner=True, persist=True, ttl="1h")
 def parse_document(uploaded_file, collection_name=None):
     """Parse a single document and add it to a collection.
 
@@ -114,6 +117,7 @@ def process_multiple_files(uploaded_files, collection_name):
     # Process each file
     for file in uploaded_files:
         try:
+            # Process the document without caching
             text, tokens, model, metadata = parse_document(file, collection_name)
 
             if model:  # Document was processed successfully
@@ -127,6 +131,8 @@ def process_multiple_files(uploaded_files, collection_name):
             else:
                 results["failed_files"].append(file.name)
         except Exception as e:
+            # Log the error for debugging
+            print(f"Error processing {file.name}: {str(e)}")
             results["failed_files"].append(f"{file.name} (Error: {str(e)})")
 
     return results
@@ -134,48 +140,58 @@ def process_multiple_files(uploaded_files, collection_name):
 collections = doc_store.list_collections()
 
 # Main page layout
-col1, col2 = st.columns([2, 1])
+if collections:
+    st.subheader("Available Collections")
+    selected = st.selectbox(
+        "Select a collection to manage",
+        ["None"] + collections,
+        index=0,
+        key="collection_selector",
+        help="Switch between previously uploaded document collections"
+    )
 
-with col1:
-    if collections:
-        st.subheader("Available Collections")
-        selected = st.selectbox(
-            "Select a collection to manage",
-            ["None"] + collections,
-            index=0,
-            key="collection_selector",
-            help="Switch between previously uploaded document collections"
-        )
+    # Handle collection selection
+    if selected != "None" and selected != st.session_state.selected_collection:
+        # Add a flag to indicate this was a manual selection
+        st.session_state.manual_collection_selection = True
+        st.session_state.selected_collection = selected
+        st.success(f"Loaded collection: {selected}")
+        st.rerun()
+else:
+    st.info("No collections available. Upload documents below to create one.")
 
-        # Handle collection selection
-        if selected != "None" and selected != st.session_state.selected_collection:
-            st.session_state.selected_collection = selected
-            st.success(f"Loaded collection: {selected}")
-            st.rerun()
-    else:
-        st.info("No collections available. Upload documents below to create one.")
-
+with st.expander("# Create New Collection", expanded=False):
 # Add custom collection name input
-with col2:
+    st.subheader("New Collection")
     custom_collection_name = st.text_input(
         "Collection Name (optional)",
         placeholder="Enter a name for your collection",
         help="If not provided, the first filename will be used"
     )
 
-# Add file uploader
-uploaded_file = st.file_uploader(
-    "Upload Documents",
-    type=["pdf", "docx"],
-    help="Accepts PDF and Word documents. Upload multiple files to add them to a single collection.",
-    key="chat_upload",
-    accept_multiple_files=True
-)
+    # Add file uploader
+    uploaded_file = st.file_uploader(
+        "Upload Documents",
+        type=["pdf", "docx"],
+        help="Accepts PDF and Word documents. Upload multiple files to add them to a single collection.",
+        key="chat_upload",
+        accept_multiple_files=True
+    )
+
+# Reset manual collection selection flag when navigating to this page
+# This allows selections to work again after previously setting it
+if st.session_state.manual_collection_selection:
+    # Only reset if we're now in a stable state (not actively processing files)
+    if not st.session_state.get("processing_files", False):
+        st.session_state.manual_collection_selection = False
 
 # Process uploaded files if present
 if uploaded_file:
     processing_results = None
     single_file_details = None
+
+    # Set a flag to indicate we're processing files
+    st.session_state.processing_files = True
 
     with st.status("Processing document(s)...") as status:
         if isinstance(uploaded_file, list):  # Multiple files
@@ -221,6 +237,9 @@ if uploaded_file:
         with st.expander("Show details"):
             st.write(f"Number of tokens: {single_file_details[1]}")
             st.write(f"Using model: {single_file_details[2]}")
+
+    # Reset processing flag now that we're done
+    st.session_state.processing_files = False
 
 # Display collection details if one is selected
 if st.session_state.selected_collection:
@@ -354,6 +373,53 @@ if st.session_state.selected_collection:
             if results["success_count"] > 0:
                 status.update(label=f"Added {results['success_count']} documents to collection")
                 st.success(f"Added {results['success_count']} documents to '{collection_name}'")
-                st.rerun()
+
+                # Update the session state but don't force a rerun
+                # This prevents the infinite loop when adding documents
+                st.session_state.selected_collection = collection_name
+
+                # Instead of rerunning, just update the UI
+                # The collection will refresh on the next natural page load
             else:
+                status.update(label=f"Failed to add documents to collection")
                 st.error("No documents were added successfully")
+
+                # Show detailed error information
+                if results["failed_files"]:
+                    with st.expander("Error Details"):
+                        for file in results["failed_files"]:
+                            st.write(f"- {file}")
+
+            # Make sure to reset the processing flag for this section too
+            st.session_state.processing_files = False
+
+# Add this after the document list section, inside the if st.session_state.selected_collection block
+    # Display document contents
+    st.subheader("Document Contents")
+    documents = doc_store.list_documents(collection_name)
+
+    if documents:
+        # Create a document selector
+        doc_names = [doc.get('filename', 'Unknown') for doc in documents]
+        selected_doc = st.selectbox(
+            "Select a document to view",
+            doc_names,
+            key="doc_content_selector"
+        )
+
+        # Get and display the selected document's content
+        if selected_doc:
+            selected_content = None
+            for doc in documents:
+                if doc.get('filename') == selected_doc:
+                    # Get document content from Chroma
+                    content = doc_store.get_document_content(
+                        collection_name=collection_name,
+                        doc_id=doc.get('id')
+                    )
+                    if content:
+                        with st.expander(f"Content of {selected_doc}", expanded=False):
+                            st.markdown(content)
+                    else:
+                        st.warning("Could not retrieve document content")
+                    break

@@ -77,10 +77,6 @@ def get_relevant_chunks(question: str, collection_name: str) -> str:
             n_results=5  # Number of chunks to retrieve
         )
 
-        # Debug the results structure
-        print(f"Results type: {type(results)}")
-        print(f"Results content: {results}")
-
         if not results or "documents" not in results:
             print("No results found")
             return None
@@ -90,7 +86,7 @@ def get_relevant_chunks(question: str, collection_name: str) -> str:
         metadatas = results["metadatas"][0] if isinstance(results["metadatas"], list) else []
 
         # Debug chunks
-        print(f"Retrieved {len(documents)} chunks")
+        # print(f"Retrieved {len(documents)} chunks")
 
         all_chunks = []
         # Process each document chunk

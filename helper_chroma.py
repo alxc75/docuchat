@@ -69,13 +69,27 @@ class ChromaDocStore:
             chromadb.Collection: The created/retrieved collection
         """
         name = self._sanitize_collection_name(name)
+
+        # First check if the collection already exists
+        # In Chroma v0.6.0, list_collections returns collection names directly
+        collections = self.client.list_collections()
+        if name in collections:
+            return self.client.get_collection(name=name)
+
+        # If it doesn't exist, create it
         try:
             return self.client.create_collection(
                 name=name,
                 metadata={"created_at": datetime.utcnow().isoformat()}
             )
-        except ValueError:  # Collection already exists
-            return self.client.get_collection(name=name)
+        except Exception as e:  # Catch any exception when creating
+            # If we get here, the collection might have been created by another process
+            # or there was some other error. Try to get it first.
+            try:
+                return self.client.get_collection(name=name)
+            except Exception:
+                # If we still can't get it, re-raise the original exception
+                raise e
 
     def process_document(self, text: str, chunk_size: int = 500) -> List[str]:
         """Process document text into chunks.
@@ -377,11 +391,50 @@ class ChromaDocStore:
         name = self._sanitize_collection_name(name)
         self.client.delete_collection(name=name)
 
+    def get_document_content(self, collection_name: str, doc_id: str) -> str:
+        """Retrieve the full content of a document from a collection.
+
+        Args:
+            collection_name (str): Name of the collection
+            doc_id (str): Document ID (filename) to retrieve
+
+        Returns:
+            str: Document content or None if not found
+        """
+        try:
+            # Get the collection
+            collection = self.client.get_collection(name=self._sanitize_collection_name(collection_name))
+            if not collection:
+                return None
+
+            # Get all chunks for this document by matching chunk IDs that start with doc_id
+            results = collection.get(
+                where={"filename": doc_id},  # Using filename from metadata
+                include=["documents", "metadatas"]
+            )
+
+            if results and results['documents']:
+                # Sort chunks by their index to maintain document order
+                chunks_with_index = zip(results['documents'], results['metadatas'])
+                sorted_chunks = sorted(chunks_with_index, key=lambda x: x[1].get('chunk_index', 0))
+
+                # Join sorted chunks back together
+                return "\n".join(chunk[0] for chunk in sorted_chunks)
+            return None
+        except Exception as e:
+            print(f"Error retrieving document content: {e}")
+            return None
+
 def load_chroma():
     from helper_chroma import ChromaDocStore
+
     # Initialize collection selector state
     if "selected_collection" not in st.session_state:
         st.session_state.selected_collection = None
+    if "manual_collection_selection" not in st.session_state:
+        st.session_state.manual_collection_selection = False
+    if "sidebar_collection" not in st.session_state:
+        st.session_state.sidebar_collection = None
 
     # Get available collections
     doc_store = ChromaDocStore()
@@ -390,19 +443,26 @@ def load_chroma():
     if collections:
         # Add collection selector below file uploader
         st.sidebar.markdown("### Available Collections")
+
+        # Determine the index for the selectbox
+        current_index = 0
+        if st.session_state.selected_collection in collections:
+            current_index = collections.index(st.session_state.selected_collection) + 1
+
         selected = st.sidebar.selectbox(
             "Select a collection to load",
             ["None"] + collections,
-            index=0,
-            key="collection_selector",
+            index=current_index,
+            key="sidebar_collection_selector",  # Use a different key to avoid conflicts
             help="Switch between previously uploaded documents"
         )
 
-        # Handle collection selection
-        if selected != "None" and selected != st.session_state.selected_collection:
+        # Handle collection selection, but don't change if it's being managed by the Collections page
+        if selected != "None" and selected != st.session_state.sidebar_collection and not st.session_state.manual_collection_selection:
+            st.session_state.sidebar_collection = selected
             st.session_state.selected_collection = selected
             st.sidebar.success(f"Loaded collection: {selected}")
-            st.rerun()
+            # No st.rerun() to prevent loops
     else:
         st.sidebar.info("No collections available. Upload a document in the Collections tab to create one.")
 
