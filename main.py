@@ -37,7 +37,7 @@ doc_loaded = st.empty()
 
 # Create the engine
 if st.secrets.ollama.ollama_flag == 0:
-    engine = OpenAI(api_key=api_key)
+    engine = OpenAI(api_key=api_key).chat.completions.create
     engine_type = "openai"
     rag_model = "gpt-4o-mini"
 else:
