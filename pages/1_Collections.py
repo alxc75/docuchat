@@ -19,6 +19,8 @@ if "selected_collection" not in st.session_state:
     st.session_state.selected_collection = None
 if "show_rename_dialog" not in st.session_state:
     st.session_state.show_rename_dialog = False
+if "show_delete_dialog" not in st.session_state:
+    st.session_state.show_delete_dialog = False
 
 @st.cache_data(show_spinner=True, persist=True)
 def parse_document(uploaded_file, collection_name=None):
@@ -172,6 +174,9 @@ uploaded_file = st.file_uploader(
 
 # Process uploaded files if present
 if uploaded_file:
+    processing_results = None
+    single_file_details = None
+
     with st.status("Processing document(s)...") as status:
         if isinstance(uploaded_file, list):  # Multiple files
             if len(uploaded_file) > 0:
@@ -183,17 +188,8 @@ if uploaded_file:
                     # Set this as the active collection
                     st.session_state.selected_collection = results["collection_name"]
 
-                    # Show processing details
-                    with st.expander("Processing Details"):
-                        st.write(f"Total tokens: {results['total_tokens']}")
-                        st.write("Processed files:")
-                        for file in results["processed_files"]:
-                            st.write(f"- {file['filename']}: {file['tokens']} tokens")
-
-                        if results["failed_files"]:
-                            st.error("Failed files:")
-                            for file in results["failed_files"]:
-                                st.write(f"- {file}")
+                    # Store results for display outside of status
+                    processing_results = results
                 else:
                     st.error("No documents were processed successfully")
         else:  # Single file (backward compatibility)
@@ -202,21 +198,37 @@ if uploaded_file:
                 coll_name = custom_collection_name if custom_collection_name else uploaded_file.name
                 st.success(f"Document '{uploaded_file.name}' processed and stored in collection '{coll_name}'")
 
-                # Display document details in a collapsible container
-                with st.expander("Show details"):
-                    st.write(f"Number of tokens: {tokens}")
-                    st.write(f"Using model: {model}")
+                # Store details for display outside of status
+                single_file_details = (uploaded_file.name, tokens, model, coll_name)
 
                 # Set this as the active collection
                 st.session_state.selected_collection = coll_name
+
+    # Display processing details outside of status element
+    if processing_results:
+        with st.expander("Processing Details"):
+            st.write(f"Total tokens: {processing_results['total_tokens']}")
+            st.write("Processed files:")
+            for file in processing_results["processed_files"]:
+                st.write(f"- {file['filename']}: {file['tokens']} tokens")
+
+            if processing_results["failed_files"]:
+                st.error("Failed files:")
+                for file in processing_results["failed_files"]:
+                    st.write(f"- {file}")
+
+    elif single_file_details:
+        with st.expander("Show details"):
+            st.write(f"Number of tokens: {single_file_details[1]}")
+            st.write(f"Using model: {single_file_details[2]}")
 
 # Display collection details if one is selected
 if st.session_state.selected_collection:
     st.divider()
     collection_name = st.session_state.selected_collection
 
-    # Create header area with collection name and rename button
-    col1, col2 = st.columns([3, 1])
+    # Create header area with collection name and management buttons
+    col1, col2, col3 = st.columns([3, 1, 1])
 
     with col1:
         st.subheader(f"Collection: {collection_name}")
@@ -225,6 +237,13 @@ if st.session_state.selected_collection:
         # Add rename collection button
         if st.button("Rename Collection"):
             st.session_state.show_rename_dialog = True
+            st.session_state.show_delete_dialog = False
+
+    with col3:
+        # Add delete collection button
+        if st.button("Delete Collection", type="secondary"):
+            st.session_state.show_delete_dialog = True
+            st.session_state.show_rename_dialog = False
 
     # Handle rename dialog
     if st.session_state.get("show_rename_dialog", False):
@@ -251,6 +270,32 @@ if st.session_state.selected_collection:
 
             if cancel:
                 st.session_state.show_rename_dialog = False
+                st.rerun()
+
+    # Handle delete dialog
+    if st.session_state.get("show_delete_dialog", False):
+        with st.form("delete_collection_form"):
+            st.warning(f"Are you sure you want to delete collection '{collection_name}'?")
+            st.write("This action cannot be undone. All documents in this collection will be permanently deleted.")
+
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                confirm = st.form_submit_button("Delete Collection", type="primary")
+            with col2:
+                cancel = st.form_submit_button("Cancel")
+
+            if confirm:
+                try:
+                    doc_store.delete_collection(collection_name)
+                    st.session_state.selected_collection = None
+                    st.session_state.show_delete_dialog = False
+                    st.success(f"Collection '{collection_name}' has been deleted")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error deleting collection: {str(e)}")
+
+            if cancel:
+                st.session_state.show_delete_dialog = False
                 st.rerun()
 
     # Get collection info

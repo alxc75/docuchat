@@ -297,15 +297,16 @@ class ChromaDocStore:
             return old_name
 
         # Check if target collection already exists
+        collection_exists = False
         try:
             self.client.get_collection(name=new_name)
-            raise ValueError(f"Collection '{new_name}' already exists")
-        except ValueError as e:
-            # Re-raise if it's our error about existing collection
-            if "already exists" in str(e):
-                raise
-            # Otherwise, the collection doesn't exist, which is what we want
+            collection_exists = True
+        except Exception:
+            # Collection doesn't exist, which is what we want
             pass
+
+        if collection_exists:
+            raise ValueError(f"Collection '{new_name}' already exists")
 
         # Create new collection with metadata from old one
         new_collection = self.client.create_collection(
