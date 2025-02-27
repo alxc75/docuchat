@@ -72,15 +72,43 @@ full_response = ""
 def get_relevant_chunks(question: str, collection_name: str) -> str:
     try:
         results = doc_store.query_documents(
-            collection_name=collection_name,  # Will be sanitized in ChromaDocStore
+            collection_name=collection_name,
             query=question,
-            n_results=3  # Get top 3 most relevant chunks
+            n_results=5  # Number of chunks to retrieve
         )
-        if results and results["documents"]:
-            return "\n\n".join(results["documents"][0])  # Join top chunks
-        return None
+
+        # Debug the results structure
+        print(f"Results type: {type(results)}")
+        print(f"Results content: {results}")
+
+        if not results or "documents" not in results:
+            print("No results found")
+            return None
+
+        # Get the first (and only) list of documents and metadatas
+        documents = results["documents"][0] if isinstance(results["documents"], list) else []
+        metadatas = results["metadatas"][0] if isinstance(results["metadatas"], list) else []
+
+        # Debug chunks
+        print(f"Retrieved {len(documents)} chunks")
+
+        all_chunks = []
+        # Process each document chunk
+        for i, chunk_text in enumerate(documents):
+            if isinstance(chunk_text, list):
+                chunk_text = " ".join(chunk_text)
+
+            # Add source information if available
+            metadata = metadatas[i] if i < len(metadatas) else {}
+            source = f"\nSource: {metadata.get('filename', 'Unknown')}"
+            all_chunks.append(f"{chunk_text}{source}")
+
+        return "\n\n---\n\n".join(all_chunks)
+
     except Exception as e:
         print(f"Error retrieving chunks: {e}")
+        import traceback
+        traceback.print_exc()  # Print full stack trace
         return None
 
 # Send the request to OpenAI
