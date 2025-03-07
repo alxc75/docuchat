@@ -9,9 +9,19 @@ tiktoken
 # Ollama
 ollama
 
+# Langchain
+langchain-unstructured
+langchain-huggingface
+langchain-chroma
+langchain_community
+
 # Document Handlers
 pypdf2
-docx2txt
+poppler-utils
+#tesseract-ocr
+pytesseract
+pandoc
+unstructured[all-docs]
 
 # Local & RAG
 langchain
