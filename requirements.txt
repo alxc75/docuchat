@@ -14,6 +14,7 @@ langchain-unstructured
 langchain-huggingface
 langchain-chroma
 langchain_community
+langchain-ollama
 
 # Document Handlers
 pypdf2
@@ -28,3 +29,6 @@ langchain
 chromadb
 huggingface-hub
 sentence-transformers  # For embedding generation
+termcolor
+optree
+tf-keras

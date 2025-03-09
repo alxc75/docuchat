@@ -61,6 +61,18 @@ A: Open a new terminal window and run `pip install -r requirements.txt` to insta
 **Q: Can I download any model for local use?**
 
 A: As long as your model uses the ChatML instruction template, yes. You can find models on the [HuggingFace Hub](https://huggingface.co/models?pipeline_tag=text-generation&sort=trending).
+
+###
+**Q: I am getting a *LookupError: XXX not found*. What do I do?**
+
+A: You need to install some NLTK models. In a terminal window with the docuchat environment active, open the Python interpreter with `python` and use the following two commands:
+
+```bash
+import nltk
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+```
+
 ## Contributing
 DocuChat is still in active development and you are very welcome to contribute to its development! To get started, fork the repo, make your changes and submit a pull request.
 
