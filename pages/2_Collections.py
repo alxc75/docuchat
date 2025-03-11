@@ -5,9 +5,9 @@ import chromadb
 
 from chroma_utils import process_document, get_collection_stats, ChromaDocStore
 
-st.sidebar.title("LangChain Chroma Manager")
-st.sidebar.markdown("LangChain Chroma Manager")
-st.title("LangChain Chroma Manager")
+st.sidebar.title("Collections")
+st.sidebar.markdown("Manage your document collections")
+st.title("Collections")
 
 
 # Initialize embeddings
