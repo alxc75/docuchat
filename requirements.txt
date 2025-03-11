@@ -6,11 +6,29 @@ st-pages
 openai>1
 tiktoken
 
+# Ollama
+ollama
+
+# Langchain
+langchain-unstructured
+langchain-huggingface
+langchain-chroma
+langchain_community
+langchain-ollama
+
 # Document Handlers
 pypdf2
-docx2txt
+poppler-utils
+#tesseract-ocr
+pytesseract
+pandoc
+unstructured[all-docs]
 
 # Local & RAG
 langchain
 chromadb
 huggingface-hub
+sentence-transformers  # For embedding generation
+termcolor
+optree
+tf-keras

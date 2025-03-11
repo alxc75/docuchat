@@ -1,10 +1,10 @@
 # DocuChat
 
-DocuChat is a locally-hosted application to summarize and chat with your documents. Use the OpenAI API or run models locally for 100% free usage. You can even query multiple documents thanks to state-of-the-art RAG integrations.
+DocuChat is a locally-hosted application to summarize and chat with your documents. Use the OpenAI API or run models locally with Ollama for 100% free usage. You can even query multiple documents thanks to state-of-the-art RAG integrations.
 
 ![Python Version](https://img.shields.io/badge/Python-3.11-blue?logo=python)
 
-## **NOTE: a deep rework of docuchat is on the way with free cloud-based models and smarter document management**
+### **NOTE: a hosted version of DocuChat is coming soon™**
 
 ## Features
 
@@ -40,13 +40,13 @@ pip install -r requirements.txt
 ## Usage
 All you need to do to use DocuChat is run the following terminal command in your DocuChat folder:
 ```bash
-streamlit run main.py
+streamlit run Home.py
 ```
 Your browser will automatically open DocuChat at http://localhost:8501/.
-You'll need to get your OpenAI API key (get it [here](https://platform.openai.com/account/api-keys)) and enter it into the Settings tab. Alternatively, you can run models locally for free (coming soon!).
+You'll need to either get your OpenAI API key (get it [here](https://platform.openai.com/account/api-keys)) and enter it into the Settings tab or install [Ollama](https://ollama.com/) if you want to run models locally.
 
 # FAQ
-**Q: [Windows] I'm getting an `streamlit : The term 'streamlit' is not recognized as the name of a cmdlet` error when I try to run DocuChat**
+**Q: [Windows] I'm getting a `streamlit : The term 'streamlit' is not recognized as the name of a cmdlet` error when I try to run DocuChat**
 
 A: You can either run `python -m streamlit run main.py` or [add Python to your PATH](https://datatofish.com/add-python-to-windows-path/).
 The latter is recommended if you plan on using Python in the future.
@@ -60,7 +60,25 @@ A: Open a new terminal window and run `pip install -r requirements.txt` to insta
 ###
 **Q: Can I download any model for local use?**
 
-A: As long as your model uses the ChatML instruction template, yes. You can find models on the [HuggingFace Hub](https://huggingface.co/models?pipeline_tag=text-generation&sort=trending).
+A: Of course. If you don't know which one to choose, DocuChat will recommend one. Otherwise, you can use the Ollama `pull` command followed by the model name. Find a model [here](https://ollama.com/search).
+
+###
+**Q: I am getting a *LookupError: XXX not found*. What do I do?**
+
+A: You need to install some NLTK models. In a terminal window with the docuchat environment active, open the Python interpreter with `python` and use the following two commands:
+
+```bash
+import nltk
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+```
+
+## Roadmap
+- [x] Collection management
+- [x] Local Mode (with Ollama)
+- [ ] Cloud-based embedding
+- [ ] OpenRouter support for free API models
+
 ## Contributing
 DocuChat is still in active development and you are very welcome to contribute to its development! To get started, fork the repo, make your changes and submit a pull request.
 

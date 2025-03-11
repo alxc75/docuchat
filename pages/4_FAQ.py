@@ -10,38 +10,36 @@ st.markdown("---") # Divider
 
 st.markdown("""
 ## What is DocuChat?
-DocuChat is a locally-hosted application to summarize and chat with your documents. Use the OpenAI API or run models 
-locally for 100% free usage. You can even query multiple documents thanks to state-of-the-art RAG integrations (coming soon!).
+DocuChat is a locally-hosted application to summarize and chat with your documents. You can create collections of multiple documents and switch between collections at any time. Use the OpenAI API or run models
+locally for 100% free usage.
 """)
 
 st.markdown("""
 ## How do I use it?
 To get started, enter your OpenAI API key in the Settings tab. If you don't have one, get it [here](https://platform.openai.com/api-keys).
 Your key is safe and will never leave your device. Neither I nor OpenAI have access to it.
-Alternatively, head to the Local Mode tab in the sidebar to install the required tools and toggle Local Mode in the Settings.\n
-Then, upload a document in the Summary tab to get a one-click summary. Alternatively you can use the Chat tab to ask questions about your document.\n
-*Did you know? A document uploaded in the Summary tab is automatically shared to the Chat tab and vice-versa. Upload a new document to start over.* 
+Alternatively, install [Ollama](https://ollama.com/) then head to the Settings tab and toggle Local Mode.\n
+Then, upload one or more documents in the Collections tab to query your documents.\n
+""")
+
+st.markdown("""
+## What are Collections?
+Colections are groups of documents that you can create and switch between at any time. You can create a collection by uploading documents in the Collections tab. You can upload various types of documents (PDFs, Powerpoint Presentations, Word Documents, CSV files, etc) but note that PDFs are the recommended format. You can add or remove documents from a collection after it has been created. You can also do a simple semantic query on a collection to see the most relevant paragraphs that will be fed to the LLM for a given query if you'd like.
 """)
 
 st.markdown("""
 ## What is Local Mode?
-Local Mode is a feature that allows you to run models locally for 100% free usage. You don't need an OpenAI API key to use it so DocuChat becomes completely free.\n
-Note however that you still need a decently fast computer. We selected a base model with low to midrange requirements but it still needs a decent CPU and at least 8GB of RAM (16GB recommended).
-If the answers are taking too long to generate, try using the OpenAI API instead.
+Local Mode is a feature that allows you to run models locally for 100% free usage using [Ollama](https://ollama.com/). You don't need an OpenAI API key to use it so DocuChat becomes completely free. To use it, download Ollama and a model via its interface and you're good to go. Docuchat will let you know if Ollama isn't running. If you don't know what model to use, DocuChat will automatically recommend a model that you can download in one click.\n
+Note however that you still need a decently fast computer. We selected a base model with low requirements but it still needs a modern CPU and at least 8GB of RAM (16GB recommended).
+If the answers are taking too long to generate, try using the OpenAI API instead. We selected the `gpt-4o-mini` model that's super fast and cheap.
 """)
+
 
 st.markdown("""
-## What's on the roadmap?
-DocuChat is still in early development. Here are some of the features I'm working on:\n
-- Local mode: Run models locally for 100% free usage, no OpenAI API key required.
-- Advanced mode: Upload multiple documents and query them with citations thanks to state-of-the-art machine learning techniques.
-
 If you have any suggestions or a bug you would like to report, please let me know on [GitHub](https://github.com/xTellarin/docuchat/tree/main)!
-Alternatively, you can reach me on Discord at `tellarin` or by [email](mailto:tellarin.dev@gmail.com).
 """)
 
 
-st.markdown("#") # Spacer
 st.markdown("#") # Spacer
 st.markdown("#") # Spacer
 st.markdown("---") # Divider
@@ -49,7 +47,7 @@ st.markdown("---") # Divider
 st.markdown(f"""
 ### Copyright Notice
 Docuchat, a smart knowledge assistant for your documents.\n
-Copyright © {year} xTellarin\n
+Copyright © {year} alxc75\n
 Licensed under GNU GPL Version 3\n
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -64,7 +62,7 @@ GNU General Public License for more details.
 
 # ------------------- LICENSE -------------------
 # Docuchat, a smart knowledge assistant for your documents.
-# Copyright © 2024 xTellarin
+# Copyright © 2025 alxc75
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

@@ -5,51 +5,55 @@ import os
 import json
 
 
-def jsonmaker():
-    # Set default values for variables
-    api_key = ""
-    endpoint = "https://api.openai.com/v1/"
-    install_flag = 0
-    # Check whether the userinfo.json file exists
-    if os.path.exists("userinfo.json"):
-        # Check whether the API key is set
-        with open("userinfo.json", "r") as f:
-            userinfo = json.load(f)
-            if "api_key" in userinfo:
-                api_key = userinfo["api_key"]
-                endpoint = "https://api.openai.com/v1/"
-                if "install_flag" not in userinfo:
-                    install_flag = 0
-            else:
-                api_key = ""
-                endpoint = "http://localhost:8080/v1"
-                if "install_flag" not in userinfo:
-                    install_flag = 0
+import os
+import toml
+import streamlit as st
 
+def secretmaker():
+    """Create and manage Streamlit secrets for API keys and endpoints"""
 
-    # If the userinfo.json file does not exist, create it
-    else:
-        api_key = ""
-        endpoint = "https://api.openai.com/v1/"
-        install_flag = 0
+    # Define default values
+    default_secrets = {
+        "api_keys": {
+            "openai": "",
+        },
 
-        userinfo = {
-            "api_key": api_key,
-            "endpoint": endpoint,
-            "install_flag": install_flag
+        "ollama": {
+            "endpoint": "http://localhost:11434",
+            "ollama_flag": 0,
+            "default_model": ""
         }
-        with open("userinfo.json", "w") as f:
-            json.dump(userinfo, f, indent=4)
+    }
 
+    # Ensure .streamlit directory exists
+    os.makedirs(".streamlit", exist_ok=True)
+    secrets_path = ".streamlit/secrets.toml"
 
-    return api_key, endpoint, install_flag
+    # Create secrets.toml if it doesn't exist
+    if not os.path.exists(secrets_path):
+        with open(secrets_path, "w") as f:
+            toml.dump(default_secrets, f)
+        st.warning("Created new secrets file at .streamlit/secrets.toml")
 
+    # Load existing secrets or use defaults
+    try:
+        # Get values from st.secrets with fallbacks to defaults
+        api_key = st.secrets.api_keys.get("openai", default_secrets["api_keys"]["openai"])
+        ollama_flag = st.secrets.ollama.get("ollama_flag", default_secrets["ollama"]["ollama_flag"])
 
-api_key, endpoint, install_flag = jsonmaker()    # Calling for the other files accessing the variables in this file.
+    except Exception as e:
+        st.error(f"Error loading secrets: {str(e)}")
+        api_key = default_secrets["api_keys"]["openai"]
+        ollama_flag = default_secrets["ollama"]["ollama_flag"]
+
+    return api_key, ollama_flag
+
+# Get the secrets for use in other files
+api_key, ollama_flag = secretmaker()
 
 # ------------------- LICENSE -------------------
 # Docuchat, a smart knowledge assistant for your documents.
-# Copyright © 2024 xTellarin
+# Copyright © 2025 alxc75
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

@@ -7,3 +7,10 @@ test/
 __pycache__/
 llama.cpp/
 venv/
+
+*plan.md
+db/chroma/*
+
+.streamlit
+langchain/
+temp_file
