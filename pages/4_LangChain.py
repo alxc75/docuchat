@@ -17,8 +17,10 @@ if "messages" not in st.session_state:
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+    # Only display messages that are not system messages
+    if message["role"] != "system":
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
 with st.spinner("Loading collection..."):
     chroma = ChromaDocStore()
@@ -50,18 +52,20 @@ def llm_response(llm, messages):
         yield(chunk.text())
 
 if prompt := st.chat_input("What do you want to know about these documents?"):
-    results = vector_store.similarity_search(str(prompt), 10)
-    results_contents = [doc.page_content for doc in results]
+    # Only process the prompt if it contains non-whitespace characters
+    if prompt.strip():
+        results = vector_store.similarity_search(str(prompt), 10)
+        results_contents = [doc.page_content for doc in results]
 
-    st.session_state.messages.append({"role": "system", "content": f"You are a retrieval model. You have access to the most relevant results from a collection of document. Answer the user's question about these documents. Only base your answer on the following documents. If the question cannot be answered from the following documents, clearly state so. Here are the results: {results_contents}"})
-    # Display user message in chat message container
-    st.chat_message("user").markdown(prompt)
-    # Add user message to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
+        st.session_state.messages.append({"role": "system", "content": f"You are a retrieval model. You have access to the most relevant results from a collection of document. Answer the user's question about these documents. Only base your answer on the following documents. If the question cannot be answered from the following documents, clearly state so. Here are the results: {results_contents}"})
+        # Display user message in chat message container
+        st.chat_message("user").markdown(prompt)
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": prompt})
 
 
-    response = llm_response(llm, st.session_state.messages)
-    with st.chat_message("assistant"):
-        st.write_stream(response)
-    # Add assistant response to chat history
-    st.session_state.messages.append({"role": "assistant", "content": response})
+        response = llm_response(llm, st.session_state.messages)
+        with st.chat_message("assistant"):
+            st.write_stream(response)
+        # Add assistant response to chat history
+        st.session_state.messages.append({"role": "assistant", "content": response})
