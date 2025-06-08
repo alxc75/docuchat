@@ -44,7 +44,10 @@ with st.expander("Create New Collection"):
 with st.spinner("Loading Document Collections..."):
     # List and select collections
     chroma = ChromaDocStore()
-    collections = chroma.list_collections()
+    # Get the list of collection objects
+    collection_objects = chroma.list_collections()
+    # Extract just the names into a simple list for the selectbox
+    collections = [c.name for c in collection_objects]
 
 if not collections:
     st.warning("No collections found. Create a new collection to get started.")
