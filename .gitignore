@@ -14,3 +14,5 @@ db/chroma/*
 .streamlit
 langchain/
 temp_file
+
+docuchat/

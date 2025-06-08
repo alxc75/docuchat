@@ -31,7 +31,7 @@ st.markdown("""
 ## What is Local Mode?
 Local Mode is a feature that allows you to run models locally for 100% free usage using [Ollama](https://ollama.com/). You don't need an OpenAI API key to use it so DocuChat becomes completely free. To use it, download Ollama and a model via its interface and you're good to go. Docuchat will let you know if Ollama isn't running. If you don't know what model to use, DocuChat will automatically recommend a model that you can download in one click.\n
 Note however that you still need a decently fast computer. We selected a base model with low requirements but it still needs a modern CPU and at least 8GB of RAM (16GB recommended).
-If the answers are taking too long to generate, try using the OpenAI API instead. We selected the `gpt-4o-mini` model that's super fast and cheap.
+If the answers are taking too long to generate, try using the OpenAI API instead. We selected the `gpt-4.1-mini` model that's super fast and cheap.
 """)
 
 
